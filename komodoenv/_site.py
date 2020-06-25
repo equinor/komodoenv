@@ -601,6 +601,8 @@ def execusercustomize():
 
 
 def main():
+    sys.executable = sys.executable.replace("libexec", "bin")
+
     global ENABLE_USER_SITE
     virtual_install_main_packages()
     abs__file__()

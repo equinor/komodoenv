@@ -2,9 +2,11 @@ import sys
 import os
 import argparse
 import re
+import textwrap
 from shutil import copy2 as copy
 from pathlib import Path
 from .release import Release
+from .bundle import get_embed_wheels
 
 
 KOMODO_ROOT = Path("/prog/res/komodo")
@@ -14,7 +16,7 @@ KOMODO_ROOT = Path("/prog/res/komodo")
 PYTHON_PATTERN = re.compile("^python[0-9.]*$")
 
 
-MODULE_TESTS = ("{0}.so", "{0}module.so", "{0}.py", "{0}.pyc", "{0}")
+MODULE_TESTS = ("{}.so", "{}module.so", "{}.py", "{}.pyc", "{}")
 
 
 def _required_modules(release):
@@ -75,7 +77,6 @@ def _required_files(release):
     return files
 
 
-
 def _gen_shim(envroot: Path, relroot: Path, basename: str) -> str:
     libexec = envroot
     return """#!/bin/bash -eu
@@ -113,6 +114,47 @@ def _copy_pythons(src: Path, dst: Path):
             if not PYTHON_PATTERN.match(file_):
                 continue
             copy(src/rel/file_, dst/rel/file_)
+
+
+def _install_wheels(release):
+    SCRIPT = textwrap.dedent("""
+        import sys
+        import pkgutil
+        import tempfile
+        import os
+
+        import pip
+
+        # cert_data = pkgutil.get_data("pip._vendor.requests", "cacert.pem")
+        # if cert_data is not None:
+        #     cert_file = tempfile.NamedTemporaryFile(delete=False)
+        #     cert_file.write(cert_data)
+        #     cert_file.close()
+        # else:
+        #     cert_file = None
+
+        try:
+            args = ["install", "--ignore-installed"]
+            # if cert_file is not None:
+            #     args += ["--cert", cert_file.name]
+            args += sys.argv[1:]
+
+            sys.exit(pip.main(args))
+        finally:
+            pass
+            # if cert_file is not None:
+            #     os.remove(cert_file.name)
+    """).encode("utf8")
+
+    pythonpath = os.pathsep.join(map(str, get_embed_wheels(release)))
+    env = {
+        "PYTHONPATH": pythonpath,
+        "PIP_USE_WHEEL": "1",
+        "PIP_ONLY_BINARY": ":all:",
+        "PIP_USER": "0",
+        "PIP_NO_INDEX": "1"
+    }
+    print(release.run(SCRIPT, env=env, args=get_embed_wheels(release)))
 
 
 def _create(root: Path, dest: Path):
@@ -160,6 +202,10 @@ def _create(root: Path, dest: Path):
 
     orig_prefix = dest/"lib"/release.libdir/"orig-prefix.txt"
     orig_prefix.write_text(str(root))
+
+    # Install pip, wheel, setuptools
+    release._python_executable = dest/"bin"/"python"
+    _install_wheels(release)
 
 
 def main():

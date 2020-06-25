@@ -79,6 +79,23 @@ class Release:
 
     def _get_sys(self, command):
         script = "import sys, json; print(json.dumps(tuple(sys.{})))".format(command)
-        env = os.environ.copy()
+        return json.loads(self.run(script))
+
+    def run(self, script, env=None, args=None):
+        if env is None:
+            env = {}
+        if args is None:
+            args = []
         env["LD_LIBRARY_PATH"] = "{0}/lib:{0}/lib64".format(self.root)
-        return json.loads(subprocess.check_output([self._python_executable, "-c", script], env=env))
+
+        cmd = [self._python_executable, "-"] + list(args)
+        print("Processo starto desu:", cmd)
+        proc = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+        if isinstance(script, str):
+            script = bytes(script, "utf-8")
+
+        stdout, stderr = proc.communicate(script)
+        print(str(stdout, "utf-8"))
+        proc.wait()
+        return stdout
