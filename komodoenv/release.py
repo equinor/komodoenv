@@ -1,8 +1,8 @@
-from typing import Union
 from pathlib import Path
 from enum import Enum
 from textwrap import dedent
 import os
+import sys
 import subprocess
 import json
 import yaml
@@ -16,7 +16,7 @@ class PythonExecutableType(Enum):
 class Release:
     KOMODO_ROOT = Path("/prog/res/komodo")
 
-    def __init__(self, path: Union[Path, str]):
+    def __init__(self, path):
         """Detect a komodo version of path"""
         if isinstance(path, Path):
             self._path = path.absolute()
@@ -75,7 +75,7 @@ class Release:
 
     @property
     def libdir(self):
-        return f"python{self.majver}.{self.minver}"
+        return "python{}.{}".format(self.majver, self.minver)
 
     def _get_sys(self, command):
         script = "import sys, json; print(json.dumps(tuple(sys.{})))".format(command)
@@ -88,14 +88,13 @@ class Release:
             args = []
         env["LD_LIBRARY_PATH"] = "{0}/lib:{0}/lib64".format(self.root)
 
-        cmd = [self._python_executable, "-"] + list(args)
+        cmd = map(str, [self._python_executable, "-"] + list(args))
         print("Processo starto desu:", cmd)
         proc = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-        if isinstance(script, str):
+        if sys.version_info >= (3,) and isinstance(script, str):
             script = bytes(script, "utf-8")
 
         stdout, stderr = proc.communicate(script)
-        print(str(stdout, "utf-8"))
         proc.wait()
         return stdout

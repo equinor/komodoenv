@@ -45,7 +45,7 @@ BUNDLE_SUPPORT = {
     },
 }
 
-def get_embed_wheels(release):
-    key = f"{release.majver}.{release.minver}"
+def get_embed_wheels(version_info):
+    key = "{}.{}".format(version_info[0], version_info[1])
     support = BUNDLE_SUPPORT.get(key)
-    return [BUNDLE_DIRECTORY / fn for fn in support.values()]
+    return { key: BUNDLE_DIRECTORY / fn for key, fn in support.items() }
