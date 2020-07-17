@@ -25,7 +25,7 @@ def read_config():
             continue
         else:
             key = line[:split_at].strip()
-            val = line[split_at + 1 :].strip()
+            val = line[split_at + 1:].strip()
             config[key] = val
     return config
 
@@ -60,7 +60,7 @@ def rewrite_executable(path, python, text):
 
     newline_pos = text.find(b"\n")
     if text[0:2] == b"#!" and b"python" in text[:newline_pos]:
-        return "#!{python}\n{rest}".format(python=python, rest=text[newline_pos + 1 :])
+        return "#!{python}\n{rest}".format(python=python, rest=text[newline_pos + 1:])
 
     return dedent(
         """\

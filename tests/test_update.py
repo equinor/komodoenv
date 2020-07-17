@@ -1,11 +1,11 @@
 from komodoenv import update
 from textwrap import dedent
-import sys
 import time
 
 
 def test_rewrite_executable_python():
-    pip = dedent("""\
+    pip = dedent(
+        """\
     #!/usr/bin/python2
     # EASY-INSTALL-ENTRY-SCRIPT: 'pip==8.1.2','console_scripts','pip'
     __requires__ = 'pip==8.1.2'
@@ -15,7 +15,8 @@ def test_rewrite_executable_python():
     if __name__ == '__main__':
         sys.exit(
             load_entry_point('pip==8.1.2', 'console_scripts', 'pip')()
-        )""")
+        )"""
+    )
 
     python = "/prog/res/komodo/bin/python"
     lines = pip.splitlines()
@@ -30,18 +31,21 @@ def test_rewrite_executable_binary():
         sh = f.read()
 
     python = "unused"
-    expect = dedent("""\
+    expect = dedent(
+        """\
     #!/bin/bash
     export LD_LIBRARY_PATH=/prog/res/komodo/lib:/prog/res/komodo/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
     /prog/res/komodo/bin/bash "$@"
-    """)
+    """
+    )
 
     assert expect == update.rewrite_executable("/prog/res/komodo/bin/bash", python, sh)
 
 
 def test_rewrite_executable_other_shebang():
     python = "unused"
-    gem = dedent("""\
+    gem = dedent(
+        """\
     #!/prog/res/komodo/bin/ruby
     #--
     # Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
@@ -65,13 +69,16 @@ def test_rewrite_executable_other_shebang():
       Gem::GemRunner.new.run args
     rescue Gem::SystemExitException => e
       exit e.exit_code
-    end""")
+    end"""
+    )
 
-    expect = dedent("""\
+    expect = dedent(
+        """\
     #!/bin/bash
     export LD_LIBRARY_PATH=/prog/res/komodo/lib:/prog/res/komodo/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
     /prog/res/komodo/bin/gem "$@"
-    """)
+    """
+    )
 
     assert expect == update.rewrite_executable("/prog/res/komodo/bin/gem", python, gem)
 
@@ -84,7 +91,9 @@ def test_track(tmpdir):
         actual = update.current_track("bleeding")
         assert actual["tracked-release"] == "bleeding"
         assert actual["current-release"] == "bleeding"
-        assert abs(actual["mtime-release"] - time.time()) <= 1.0  # This *could* cause false-negatives if for
+        assert (
+            abs(actual["mtime-release"] - time.time()) <= 1.0
+        )  # This *could* cause false-negatives if for
 
 
 def test_track_symlink(tmpdir):
@@ -96,7 +105,9 @@ def test_track_symlink(tmpdir):
         actual = update.current_track("stable")
         assert actual["tracked-release"] == "stable"
         assert actual["current-release"] == "bleeding"
-        assert abs(actual["mtime-release"] - time.time()) <= 1.0  # This *could* cause false-negatives if for
+        assert (
+            abs(actual["mtime-release"] - time.time()) <= 1.0
+        )  # This *could* cause false-negatives if for
 
 
 def test_should_update_trivial(tmpdir):

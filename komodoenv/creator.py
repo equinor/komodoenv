@@ -2,7 +2,6 @@ from __future__ import print_function
 
 from pathlib import Path
 import subprocess
-import six
 import shutil
 import re
 import os
@@ -94,12 +93,20 @@ def create_virtualenv(ctx):
     env["LD_LIBRARY_PATH"] = str(ctx.srcpath / "root" / "lib")
 
     tmpdir = mkdtemp(prefix="komodoenv.")
-    print(subprocess.check_output([
-        "virtualenv", "--python", str(ctx.src_python_path),
-        "--app-data", tmpdir,
-        "--always-copy",
-        str(ctx.dstpath / "root")
-    ], env=env))
+    print(
+        subprocess.check_output(
+            [
+                "virtualenv",
+                "--python",
+                str(ctx.src_python_path),
+                "--app-data",
+                tmpdir,
+                "--always-copy",
+                str(ctx.dstpath / "root"),
+            ],
+            env=env,
+        )
+    )
 
 
 def copy_update_script(ctx):
@@ -113,18 +120,20 @@ def copy_update_script(ctx):
 
 def create_config(ctx):
     with open(str(ctx.dstpath / "komodoenv.conf"), "w") as f:
-        f.write(dedent("""\
+        f.write(
+            dedent(
+                """\
         current-release = {rel}
         tracked-release = {rel}
         mtime-release = 0
-        """).format(rel=ctx.srcpath.name))
+        """
+            ).format(rel=ctx.srcpath.name)
+        )
 
 
 def create_pth(ctx):
     python_paths = [
-        pth
-        for pth in ctx.src_python_paths
-        if pth.startswith(str(ctx.srcpath))
+        pth for pth in ctx.src_python_paths if pth.startswith(str(ctx.srcpath))
     ]
 
     with open(str(ctx.dst_python_libpath / "site-packages" / "_komodo.pth"), "w") as f:
@@ -135,7 +144,8 @@ def shim_pythons(ctx):
     pattern = re.compile("^python[0-9.]*$")
     (ctx.dstpath / "root" / "libexec").mkdir()
 
-    txt = dedent("""\
+    txt = dedent(
+        """\
     #!/bin/bash
     root=$(dirname $0)/..
     prog=$(basename $0)
@@ -144,7 +154,8 @@ def shim_pythons(ctx):
       export _KOMODO_SHIM=$prog
     fi
     $root/libexec/$prog "$@"
-    """).format(komodo_prefix=(ctx.srcpath / "root"))
+    """
+    ).format(komodo_prefix=(ctx.srcpath / "root"))
 
     for name in os.listdir(str(ctx.dstpath / "root" / "bin")):
         if not pattern.match(name):

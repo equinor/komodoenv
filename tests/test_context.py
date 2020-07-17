@@ -8,6 +8,7 @@ def test_invoke_python():
     out = ctx.invoke_python(sys.executable, ["-c", "print('Test')"])
     assert out == "Test\n"
 
+
 def test_invoke_python_script():
     ctx = Context("/usr")
     script = "import sys;print(sys.executable)"
@@ -17,5 +18,4 @@ def test_invoke_python_script():
 
 
 def test_invoke_srcpython_script():
-    ctx = Context("/usr")
-    script = "import sys;print(sys.executable)"
+    pass

@@ -33,7 +33,9 @@ class Context(object):
         # Get python sys.path
         script = "import sys,json;print(json.dumps(sys.path))"
         env = {"LD_LIBRARY_PATH": "{0}/lib:{0}/lib64".format(self.srcpath / "root")}
-        self.src_python_paths = json.loads(self.invoke_srcpython(script=script, env=env))
+        self.src_python_paths = json.loads(
+            self.invoke_srcpython(script=script, env=env)
+        )
 
         # Existence of libexec suggests that this is a libexec-shim komodo release
         libexec_python = self.srcpath / "root" / "libexec" / "python"

@@ -1,10 +1,6 @@
-import sys
 import os
 import argparse
-import re
-import textwrap
 import logging
-from shutil import copy2 as copy
 from pathlib import Path
 from komodoenv.creator import create
 from komodoenv.context import Context
@@ -25,7 +21,7 @@ def autodetect():
     for mode in "stable", "testing", "unstable", "bleeding":
         for suffix in "", "-py2", "-py27", "-py3", "-py36":
             name = mode + suffix
-            dir_ = KOMODO_RELEASE / name
+            dir_ = KOMODO_ROOT / name
             if not dir_.is_dir() or not dir_.is_symlink():
                 continue
             symlink = dir_.resolve()

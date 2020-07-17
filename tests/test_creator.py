@@ -1,8 +1,6 @@
 import sys
-import os
 import pytest
 import subprocess
-from stat import ST_MODE, S_IFREG
 from textwrap import dedent
 from pathlib import Path
 from komodoenv import creator
@@ -15,19 +13,23 @@ else:
 
 
 def test_generate_enable_script():
-    fmt = dedent("""\
+    fmt = dedent(
+        """\
     {komodo_prefix}
     {komodo_release}
     {komodoenv_prefix}
     {komodoenv_release}
-    """)
+    """
+    )
 
-    expect = dedent("""\
+    expect = dedent(
+        """\
     /prog/res/komodo/stable/root
     stable
     /private/unittest/kenv/root
     kenv
-    """)
+    """
+    )
 
     ctx = Mock()
     ctx.srcpath = Path("/prog/res/komodo/stable")
