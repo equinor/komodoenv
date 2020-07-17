@@ -11,6 +11,7 @@ setup(
         "enum34;python_version < '3.4'",
         "mock;python_version < '3.3'",
         "pathlib;python_version < '3.4'",
+        "virtualenv",
         "six",
     ],
     entry_points={

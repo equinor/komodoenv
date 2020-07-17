@@ -17,26 +17,30 @@ def test_rewrite_executable_python():
             load_entry_point('pip==8.1.2', 'console_scripts', 'pip')()
         )""")
 
+    python = "/prog/res/komodo/bin/python"
     lines = pip.splitlines()
-    lines[0] = "#!/prog/res/komodo/bin/python"
+    lines[0] = "#!" + python
 
-    assert "\n".join(lines) == update.rewrite_executable("/prog/res/komodo/bin/pip", pip)
+    actual = update.rewrite_executable("/prog/res/komodo/bin/pip", python, pip)
+    assert "\n".join(lines) == actual
 
 
 def test_rewrite_executable_binary():
     with open("/bin/sh", "rb") as f:
         sh = f.read()
 
+    python = "unused"
     expect = dedent("""\
     #!/bin/bash
     export LD_LIBRARY_PATH=/prog/res/komodo/lib:/prog/res/komodo/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
     /prog/res/komodo/bin/bash "$@"
     """)
 
-    assert expect == update.rewrite_executable("/prog/res/komodo/bin/bash", sh)
+    assert expect == update.rewrite_executable("/prog/res/komodo/bin/bash", python, sh)
 
 
 def test_rewrite_executable_other_shebang():
+    python = "unused"
     gem = dedent("""\
     #!/prog/res/komodo/bin/ruby
     #--
@@ -69,7 +73,7 @@ def test_rewrite_executable_other_shebang():
     /prog/res/komodo/bin/gem "$@"
     """)
 
-    assert expect == update.rewrite_executable("/prog/res/komodo/bin/gem", gem)
+    assert expect == update.rewrite_executable("/prog/res/komodo/bin/gem", python, gem)
 
 
 def test_track(tmpdir):
@@ -112,6 +116,7 @@ def test_should_update_time(tmpdir):
         config = update.current_track("bleeding")
 
         (tmpdir / "bleeding").remove()
+        time.sleep(0.01)
         (tmpdir / "bleeding").mkdir()
         assert update.should_update(config)
 

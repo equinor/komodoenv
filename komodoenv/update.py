@@ -43,7 +43,7 @@ def current_track(tracked_release):
     config = {
         "tracked-release": tracked_release,
         "current-release": os.path.basename(rp),
-        "mtime-release": st.st_mtime
+        "mtime-release": st.st_mtime,
     }
 
     return config
