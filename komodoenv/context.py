@@ -26,12 +26,12 @@ class Context(object):
             return
 
         # Get python version_info
-        script = "import sys,json;print(json.dumps(sys.version_info[:]))"
+        script = b"import sys,json;print(json.dumps(sys.version_info[:]))"
         env = {"LD_LIBRARY_PATH": "{0}/lib:{0}/lib64".format(self.srcpath / "root")}
         self.version_info = json.loads(self.invoke_srcpython(script=script, env=env))
 
         # Get python sys.path
-        script = "import sys,json;print(json.dumps(sys.path))"
+        script = b"import sys,json;print(json.dumps(sys.path))"
         env = {"LD_LIBRARY_PATH": "{0}/lib:{0}/lib64".format(self.srcpath / "root")}
         self.src_python_paths = json.loads(
             self.invoke_srcpython(script=script, env=env)

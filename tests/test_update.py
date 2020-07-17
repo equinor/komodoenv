@@ -1,6 +1,7 @@
 from komodoenv import update
 from textwrap import dedent
 import time
+import six
 
 
 def test_rewrite_executable_python():
@@ -22,8 +23,10 @@ def test_rewrite_executable_python():
     lines = pip.splitlines()
     lines[0] = "#!" + python
 
-    actual = update.rewrite_executable("/prog/res/komodo/bin/pip", python, pip)
-    assert "\n".join(lines) == actual
+    actual = update.rewrite_executable(
+        "/prog/res/komodo/bin/pip", python, six.ensure_binary(pip)
+    )
+    assert six.ensure_binary("\n".join(lines)) == actual
 
 
 def test_rewrite_executable_binary():
@@ -39,7 +42,9 @@ def test_rewrite_executable_binary():
     """
     )
 
-    assert expect == update.rewrite_executable("/prog/res/komodo/bin/bash", python, sh)
+    assert six.ensure_binary(expect) == update.rewrite_executable(
+        "/prog/res/komodo/bin/bash", python, six.ensure_binary(sh)
+    )
 
 
 def test_rewrite_executable_other_shebang():
@@ -80,7 +85,9 @@ def test_rewrite_executable_other_shebang():
     """
     )
 
-    assert expect == update.rewrite_executable("/prog/res/komodo/bin/gem", python, gem)
+    assert six.ensure_binary(expect) == update.rewrite_executable(
+        "/prog/res/komodo/bin/gem", python, six.ensure_binary(gem)
+    )
 
 
 def test_track(tmpdir):

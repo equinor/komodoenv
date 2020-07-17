@@ -89,24 +89,26 @@ def create_enable_scripts(ctx):
 
 
 def create_virtualenv(ctx):
-    env = os.environ.copy()
-    env["LD_LIBRARY_PATH"] = str(ctx.srcpath / "root" / "lib")
-
     tmpdir = mkdtemp(prefix="komodoenv.")
-    print(
-        subprocess.check_output(
-            [
-                "virtualenv",
-                "--python",
-                str(ctx.src_python_path),
-                "--app-data",
-                tmpdir,
-                "--always-copy",
-                str(ctx.dstpath / "root"),
-            ],
-            env=env,
-        )
+
+    from virtualenv import cli_run
+
+    ld_library_path = os.environ.get("LD_LIBRARY_PATH")
+    os.environ["LD_LIBRARY_PATH"] = str(ctx.srcpath / "root" / "lib")
+    cli_run(
+        [
+            "--python",
+            str(ctx.src_python_path),
+            "--app-data",
+            tmpdir,
+            "--always-copy",
+            str(ctx.dstpath / "root"),
+        ],
     )
+    if ld_library_path is None:
+        del os.environ["LD_LIBRARY_PATH"]
+    else:
+        os.environ["LD_LIBRARY_PATH"] = ld_library_path
 
 
 def copy_update_script(ctx):
