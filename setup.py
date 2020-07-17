@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
     name="komodoenv",
     version="0.1.0",
-    packages=["komodoenv", "komodoenv.bundle", "komodoenv.versions"],
+    packages=["komodoenv"],
     test_suite="tests",
     install_requires=[
         "PyYAML",
