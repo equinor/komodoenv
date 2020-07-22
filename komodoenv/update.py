@@ -109,7 +109,7 @@ def rewrite_executable(path, python, text):
             """\
     #!/bin/bash
     export LD_LIBRARY_PATH={libs}${{LD_LIBRARY_PATH:+:${{LD_LIBRARY_PATH}}}}
-    {prog} "$@"
+    exec -a "$0" "{prog}" "$@"
     """
         ).format(libs=libs, prog=path)
     )

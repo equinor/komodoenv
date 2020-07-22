@@ -145,15 +145,10 @@ def shim_pythons(ctx):
     txt = dedent(
         """\
     #!/bin/bash
-    root=$(dirname $0)/..
-    prog=$(basename $0)
-    if [ -z "${{_KOMODO_SHIM:-}}" ]; then
-      export LD_LIBRARY_PATH={komodo_prefix}/lib:{komodo_prefix}/lib64${{LD_LIBRARY_PATH:+:${{LD_LIBRARY_PATH}}}}
-      export _KOMODO_SHIM=$prog
-    fi
-    $root/libexec/$prog "$@"
+    export LD_LIBRARY_PATH={komodo_root}/lib:{komodo_root}/lib64${{LD_LIBRARY_PATH:+:${{LD_LIBRARY_PATH}}}}
+    exec -a "$0" "{komodoenv_root}/libexec/$(basename $0)" "$@"
     """
-    ).format(komodo_prefix=(ctx.srcpath / "root"))
+    ).format(komodo_root=(ctx.srcpath / "root"), komodoenv_root=(ctx.dstpath / "root"))
 
     for name in os.listdir(str(ctx.dstpath / "root" / "bin")):
         if not pattern.match(name):
