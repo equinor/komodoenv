@@ -24,9 +24,9 @@ def test_generate_enable_script():
 
     expect = dedent(
         """\
-    /prog/res/komodo/stable/root
+    /prog/res/komodo/stable
     stable
-    /private/unittest/kenv/root
+    /private/unittest/kenv
     kenv
     """
     )

@@ -32,8 +32,6 @@ disable_komodo () {{
         hash -r
     fi
 
-    unset KOMODOENV_PREFIX
-    unset KOMODOENV_RELEASE
     unset KOMODO_RELEASE
     unset ERT_LSF_SERVER
 
@@ -45,23 +43,21 @@ disable_komodo () {{
 # unset irrelevant variables
 disable_komodo preserve_disable_komodo
 
-export KOMODOENV_PREFIX={komodoenv_prefix}
-export KOMODOENV_RELEASE={komodoenv_release}
-export KOMODO_RELEASE={komodo_release}
+export KOMODO_RELEASE={komodoenv_prefix}
 
 export _PRE_KOMODO_PATH="$PATH"
-export PATH={komodoenv_prefix}/bin:{komodoenv_prefix}/shims:{komodo_prefix}/bin${{PATH:+:${{PATH}}}}
+export PATH={komodoenv_prefix}/root/bin:{komodoenv_prefix}/root/shims${{PATH:+:${{PATH}}}}
 
 export _PRE_KOMODO_MANPATH="$MANPATH"
-export MANPATH={komodoenv_prefix}/share/man:{komodo_prefix}/share/man:${{MANPATH}}
+export MANPATH={komodoenv_prefix}/root/share/man:{komodo_prefix}/root/share/man${{MANPATH:+:${{MANPATH}}}}
 
 export _PRE_KOMODO_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
 unset LD_LIBRARY_PATH
 
 export _PRE_KOMODO_PS1="${{PS1:-}}"
-export PS1="(${{KOMODOENV_RELEASE}} + ${{KOMODO_RELEASE}}) ${{PS1}}"
+export PS1="({komodoenv_release} + {komodo_release}) ${{PS1:-}}"
 
-local_script="{komodo_prefix}/../local"
+local_script="{komodo_prefix}/local"
 if [ -e "$local_script" ]; then
     source "$local_script"
 fi
@@ -74,9 +70,9 @@ fi
 
 def generate_enable_script(ctx, fmt):
     return fmt.format(
-        komodo_prefix=(ctx.srcpath / "root"),
+        komodo_prefix=ctx.srcpath,
         komodo_release=ctx.srcpath.name,
-        komodoenv_prefix=(ctx.dstpath / "root"),
+        komodoenv_prefix=ctx.dstpath,
         komodoenv_release=ctx.dstpath.name,
     )
 
