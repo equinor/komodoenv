@@ -38,7 +38,7 @@ def test_rewrite_executable_binary():
         """\
     #!/bin/bash
     export LD_LIBRARY_PATH=/prog/res/komodo/lib:/prog/res/komodo/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-    /prog/res/komodo/bin/bash "$@"
+    exec -a "$0" "/prog/res/komodo/bin/bash" "$@"
     """
     )
 
@@ -81,7 +81,7 @@ def test_rewrite_executable_other_shebang():
         """\
     #!/bin/bash
     export LD_LIBRARY_PATH=/prog/res/komodo/lib:/prog/res/komodo/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-    /prog/res/komodo/bin/gem "$@"
+    exec -a "$0" "/prog/res/komodo/bin/gem" "$@"
     """
     )
 
