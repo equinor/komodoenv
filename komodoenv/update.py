@@ -127,6 +127,8 @@ def update_bins(srcpath, dstpath):
         path = os.path.join(srcpath, "root", "libexec", name)
         if not os.path.isfile(path):
             path = os.path.join(srcpath, "root", "bin", name)
+        if not os.path.isfile(path): # if folder, ignore
+            continue
 
         with open(path) as f:
             text = f.read()
