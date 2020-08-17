@@ -68,6 +68,58 @@ fi
 """
 
 
+ENABLE_CSH = """\
+alias disable_komodo '\\\\
+    test $?_PRE_KOMODO_PATH != 0 && setenv PATH "$_PRE_KOMODO_PATH" && unsetenv _PRE_KOMODO_PATH;\\\\
+    test $?_PRE_KOMODO_MANPATH != 0 && setenv MANPATH "$_PRE_KOMODO_MANPATH" && unsetenv _PRE_KOMODO_MANPATH;\\\\
+    test $?_PRE_KOMODO_LD_PATH != 0 && setenv LD_LIBRARY_PATH "$_PRE_KOMODO_LD_PATH" && unsetenv _PRE_KOMODO_LD_PATH;\\\\
+    test $?_KOMODO_OLD_PROMPT != 0 && set prompt="$_KOMODO_OLD_PROMPT" && unsetenv _KOMODO_OLD_PROMPT;\\\\
+    test "\!:*" != "preserve_disable_komodo" && unalias disable_komodo;\\\\
+    unsetenv KOMODO_RELEASE;\\\\
+    unsetenv ERT_LSF_SERVER;\\\\
+    rehash;\\\\
+    '
+rehash
+disable_komodo preserve_disable_komodo
+
+if $?PATH then
+    setenv _PRE_KOMODO_PATH "$PATH"
+    setenv PATH {komodoenv_prefix}/root/bin:{komodoenv_prefix}/root/shims:$PATH
+else
+    setenv PATH {komodoenv_prefix}/root/bin:{komodoenv_prefix}/root/shims
+endif
+
+if $?MANPATH then
+    setenv _PRE_KOMODO_MANPATH "$MANPATH"
+    setenv MANPATH {komodoenv_prefix}/root/share/man:{komodo_prefix}/root/share/man:$MANPATH
+else
+    setenv MANPATH {komodoenv_prefix}/root/share/man:{komodo_prefix}/root/share/man:
+endif
+
+if $?LD_LIBRARY_PATH then
+    setenv _PRE_KOMODO_LD_PATH "$LD_LIBRARY_PATH"
+    unsetenv LD_LIBRARY_PATH
+endif
+
+setenv KOMODO_RELEASE {komodoenv_prefix}
+
+set local_script={komodo_prefix}/local.csh
+if ( -r $local_script) then
+    source $local_script
+endif
+
+# Could be in a non-interactive environment,
+# in which case, $prompt is undefined and we wouldn't
+# care about the prompt anyway.
+if ( $?prompt ) then
+    setenv _KOMODO_OLD_PROMPT "$prompt"
+    set prompt = "[{komodoenv_release} + {komodo_release}] $prompt"
+endif
+
+rehash
+"""
+
+
 def generate_enable_script(ctx, fmt):
     return fmt.format(
         komodo_prefix=ctx.srcpath,
@@ -81,7 +133,7 @@ def create_enable_scripts(ctx):
     with open(str(ctx.dstpath / "enable"), "w") as f:
         f.write(generate_enable_script(ctx, ENABLE_BASH))
     with open(str(ctx.dstpath / "enable.csh"), "w") as f:
-        pass
+        f.write(generate_enable_script(ctx, ENABLE_CSH))
 
 
 def create_virtualenv(ctx):
