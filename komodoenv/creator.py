@@ -5,244 +5,184 @@ import subprocess
 import shutil
 import re
 import os
+import platform
+import sys
+import logging
 from textwrap import dedent
 from tempfile import mkdtemp
+from colors import green, strip_color
+from pkg_resources import get_distribution
+
+from komodoenv.python import Python
 
 
-ENABLE_BASH = """\
-# -*- sh -*-
-disable_komodo () {{
-    if [ -n "${{_PRE_KOMODO_PATH:-}}" ]; then
-        export PATH="${{_PRE_KOMODO_PATH}}"
-        unset _PRE_KOMODO_PATH
-    fi
-    if [ -n "${{_PRE_KOMODO_MANPATH:-}}" ]; then
-        export MANPATH="${{_PRE_KOMODO_MANPATH}}"
-        unset _PRE_KOMODO_MANPATH
-    fi
-    if [ -n "${{_PRE_KOMODO_LD_LIBRARY_PATH:-}}" ]; then
-        export LD_LIBRARY_PATH="${{_PRE_KOMODO_LD_LIBRARY_PATH}}"
-        unset _PRE_KOMODO_LD_LIBRARY_PATH
-    fi
-    if [ -n "${{_PRE_KOMODO_PS1:-}}" ]; then
-        export PS1="${{_PRE_KOMODO_PS1}}"
-        unset _PRE_KOMODO_PS1
-    fi
-    if [ -n "${{BASH:-}}" -o -n "${{ZSH_VERSION:-}}" ]; then
-        hash -r
-    fi
+class _OpenChmod(object):
+    def __init__(self, path, open_mode="w", file_mode=0o644):
+        self.path = path
+        self.open_mode = open_mode
+        self.file_mode = file_mode
+        self.io = None
 
-    unset KOMODO_RELEASE
-    unset ERT_LSF_SERVER
+    def __enter__(self):
+        self.io = open(self.path, self.open_mode)
+        return self.io
 
-    if [ ! "${{1:-}}" = "preserve_disable_komodo" ]; then
-        unset -f disable_komodo
-    fi
-}}
-
-# unset irrelevant variables
-disable_komodo preserve_disable_komodo
-
-export KOMODO_RELEASE={komodoenv_prefix}
-
-export _PRE_KOMODO_PATH="$PATH"
-export PATH={komodoenv_prefix}/root/bin:{komodoenv_prefix}/root/shims${{PATH:+:${{PATH}}}}
-
-export _PRE_KOMODO_MANPATH="$MANPATH"
-export MANPATH={komodoenv_prefix}/root/share/man:{komodo_prefix}/root/share/man${{MANPATH:+:${{MANPATH}}}}
-
-export _PRE_KOMODO_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-unset LD_LIBRARY_PATH
-
-export _PRE_KOMODO_PS1="${{PS1:-}}"
-export PS1="({komodoenv_release} + {komodo_release}) ${{PS1:-}}"
-
-local_script="{komodo_prefix}/local"
-if [ -e "$local_script" ]; then
-    source "$local_script"
-fi
-
-if [ -n "${{BASH:-}}" -o -n "${{ZSH_VERSION:-}}" ]; then
-    hash -r
-fi
-
-if [ -d {komodo_prefix}/motd/scripts ]
-then
-    for f in {komodo_prefix}/motd/scripts/*
-    do
-        $f
-    done
-fi
-
-if [ -d {komodo_prefix}/motd/messages ]
-then
-    cat {komodo_prefix}/motd/messages/*
-fi
-"""
+    def __exit__(self, type, value, traceback):
+        self.path.chmod(self.file_mode)
+        self.io.close()
 
 
-ENABLE_CSH = """\
-alias disable_komodo '\\\\
-    test $?_PRE_KOMODO_PATH != 0 && setenv PATH "$_PRE_KOMODO_PATH" && unsetenv _PRE_KOMODO_PATH;\\\\
-    test $?_PRE_KOMODO_MANPATH != 0 && setenv MANPATH "$_PRE_KOMODO_MANPATH" && unsetenv _PRE_KOMODO_MANPATH;\\\\
-    test $?_PRE_KOMODO_LD_PATH != 0 && setenv LD_LIBRARY_PATH "$_PRE_KOMODO_LD_PATH" && unsetenv _PRE_KOMODO_LD_PATH;\\\\
-    test $?_KOMODO_OLD_PROMPT != 0 && set prompt="$_KOMODO_OLD_PROMPT" && unsetenv _KOMODO_OLD_PROMPT;\\\\
-    test "\!:*" != "preserve_disable_komodo" && unalias disable_komodo;\\\\
-    unsetenv KOMODO_RELEASE;\\\\
-    unsetenv ERT_LSF_SERVER;\\\\
-    rehash;\\\\
-    '
-rehash
-disable_komodo preserve_disable_komodo
+class Creator(object):
+    _fmt_action = "  " + green("{action:>10s}") + "    {message}"
 
-if $?PATH then
-    setenv _PRE_KOMODO_PATH "$PATH"
-    setenv PATH {komodoenv_prefix}/root/bin:{komodoenv_prefix}/root/shims:$PATH
-else
-    setenv PATH {komodoenv_prefix}/root/bin:{komodoenv_prefix}/root/shims
-endif
+    def __init__(self, komodo_root, srcpath, dstpath=None, use_color=False):
+        if not use_color:
+            self._fmt_action = strip_color(self._fmt_action)
 
-if $?MANPATH then
-    setenv _PRE_KOMODO_MANPATH "$MANPATH"
-    setenv MANPATH {komodoenv_prefix}/root/share/man:{komodo_prefix}/root/share/man:$MANPATH
-else
-    setenv MANPATH {komodoenv_prefix}/root/share/man:{komodo_prefix}/root/share/man:
-endif
+        self.komodo_root = komodo_root
+        self.srcpath = srcpath
+        self.dstpath = dstpath
 
-if $?LD_LIBRARY_PATH then
-    setenv _PRE_KOMODO_LD_PATH "$LD_LIBRARY_PATH"
-    unsetenv LD_LIBRARY_PATH
-endif
+        self.srcpy = Python(srcpath / "root/bin/python")
+        self.srcpy.detect()
 
-setenv KOMODO_RELEASE {komodoenv_prefix}
+        self.dstpy = self.srcpy.make_dst(dstpath / "root/bin/python")
 
-set local_script={komodo_prefix}/local.csh
-if ( -r $local_script) then
-    source $local_script
-endif
+    def print_action(self, action, message):
+        print(self._fmt_action.format(action=action, message=message))
 
-# Could be in a non-interactive environment,
-# in which case, $prompt is undefined and we wouldn't
-# care about the prompt anyway.
-if ( $?prompt ) then
-    setenv _KOMODO_OLD_PROMPT "$prompt"
-    set prompt = "[{komodoenv_release} + {komodo_release}] $prompt"
-endif
+    def mkdir(self, path):
+        self.print_action("mkdir", path + "/")
+        (self.dstpath / path).mkdir()
 
-rehash
+    def create_file(self, path, file_mode=0o644):
+        self.print_action("create", path)
+        return _OpenChmod(self.dstpath / path, file_mode=file_mode)
 
-if ( -d {komodo_prefix}/motd/scripts ) then
-    foreach f ({komodo_prefix}/motd/scripts/*)
-        $f
-    end
-endif
+    def remove_file(self, path):
+        if not (self.dstpath / path).is_file():
+            return
 
-if ( -d {komodo_prefix}/motd/messages ) then
-    cat {komodo_prefix}/motd/messages/*
-endif
-"""
+        self.print_action("remove", path)
+        (self.dstpath / path).unlink()
 
+    def virtualenv(self):
+        self.print_action("virtualenv", "using {}".format(self.srcpy.executable))
 
-def generate_enable_script(ctx, fmt):
-    return fmt.format(
-        komodo_prefix=ctx.srcpath,
-        komodo_release=ctx.srcpath.name,
-        komodoenv_prefix=ctx.dstpath,
-        komodoenv_release=ctx.dstpath.name,
-    )
+        tmpdir = mkdtemp(prefix="komodoenv.")
 
+        from virtualenv import cli_run
 
-def create_enable_scripts(ctx):
-    with open(str(ctx.dstpath / "enable"), "w") as f:
-        f.write(generate_enable_script(ctx, ENABLE_BASH))
-    with open(str(ctx.dstpath / "enable.csh"), "w") as f:
-        f.write(generate_enable_script(ctx, ENABLE_CSH))
+        ld_library_path = os.environ.get("LD_LIBRARY_PATH")
+        os.environ["LD_LIBRARY_PATH"] = str(self.srcpath / "root" / "lib")
+        cli_run(
+            [
+                "--python",
+                str(self.srcpy.executable),
+                "--app-data",
+                tmpdir,
+                "--activators=",  # Don't generate any activate scripts
+                "--always-copy",
+                str(self.dstpath / "root"),
+            ],
+        )
+        if ld_library_path is None:
+            del os.environ["LD_LIBRARY_PATH"]
+        else:
+            os.environ["LD_LIBRARY_PATH"] = ld_library_path
 
+    def run(self, path):
+        self.print_action("run", path)
+        subprocess.check_output([str(self.dstpath / path)])
 
-def create_virtualenv(ctx):
-    tmpdir = mkdtemp(prefix="komodoenv.")
+    def shim_pythons(self):
+        pattern = re.compile("^python[0-9.]*$")
 
-    from virtualenv import cli_run
-
-    ld_library_path = os.environ.get("LD_LIBRARY_PATH")
-    os.environ["LD_LIBRARY_PATH"] = str(ctx.srcpath / "root" / "lib")
-    cli_run(
-        [
-            "--python",
-            str(ctx.src_python_path),
-            "--app-data",
-            tmpdir,
-            "--always-copy",
-            str(ctx.dstpath / "root"),
-        ],
-    )
-    if ld_library_path is None:
-        del os.environ["LD_LIBRARY_PATH"]
-    else:
-        os.environ["LD_LIBRARY_PATH"] = ld_library_path
-
-
-def copy_update_script(ctx):
-    srcpath = str(Path(__file__).parent / "update.py")
-    dstpath = str(ctx.dstpath / "komodo-update")
-    shutil.copy(srcpath, dstpath)
-    os.chmod(dstpath, 0o755)
-
-    subprocess.check_output([dstpath])
-
-
-def create_config(ctx):
-    with open(str(ctx.dstpath / "komodoenv.conf"), "w") as f:
-        f.write(
-            dedent(
-                """\
-        current-release = {rel}
-        tracked-release = {rel}
-        mtime-release = 0
+        txt = dedent(
+            """\
+        #!/bin/bash
+        export LD_LIBRARY_PATH={komodo_root}/lib:{komodo_root}/lib64${{LD_LIBRARY_PATH:+:${{LD_LIBRARY_PATH}}}}
+        exec -a "$0" "{komodoenv_root}/libexec/$(basename $0)" "$@"
         """
-            ).format(rel=ctx.srcpath.name)
+        ).format(
+            komodo_root=(self.srcpath / "root"), komodoenv_root=(self.dstpath / "root")
         )
 
+        self.mkdir("root/libexec")
+        for name in os.listdir(str(self.dstpath / "root" / "bin")):
+            if not pattern.match(name):
+                continue
 
-def create_pth(ctx):
-    python_paths = [
-        pth for pth in ctx.src_python_paths if pth.startswith(str(ctx.srcpath))
-    ]
+            srcpath = "root/bin/" + name
+            dstpath = "root/libexec/" + name
 
-    with open(str(ctx.dst_python_libpath / "site-packages" / "_komodo.pth"), "w") as f:
-        print("\n".join(python_paths), file=f)
+            self.print_action("copy", "{} -> {}".format(srcpath, dstpath))
+            shutil.copy(self.dstpath / srcpath, self.dstpath / dstpath)
+            with self.create_file(srcpath, file_mode=0o755) as f:
+                f.write(txt)
 
+    def create(self):
+        self.dstpath.mkdir()
 
-def shim_pythons(ctx):
-    pattern = re.compile("^python[0-9.]*$")
-    (ctx.dstpath / "root" / "libexec").mkdir()
+        self.virtualenv()
 
-    txt = dedent(
-        """\
-    #!/bin/bash
-    export LD_LIBRARY_PATH={komodo_root}/lib:{komodo_root}/lib64${{LD_LIBRARY_PATH:+:${{LD_LIBRARY_PATH}}}}
-    exec -a "$0" "{komodoenv_root}/libexec/$(basename $0)" "$@"
-    """
-    ).format(komodo_root=(ctx.srcpath / "root"), komodoenv_root=(ctx.dstpath / "root"))
+        # Create komodoenv.conf
+        with self.create_file("komodoenv.conf") as f:
+            f.write(
+                dedent(
+                    """\
+                current-release = {rel}
+                tracked-release = {rel}
+                mtime-release = 0
+                python-version = {maj}.{min}
+                komodoenv-version = {ver}
+                komodo-root = {root}
+                linux-dist = {dist}
+                """
+                ).format(
+                    rel=self.srcpath.name,
+                    maj=self.srcpy.version_info[0],
+                    min=self.srcpy.version_info[1],
+                    ver=get_distribution("komodoenv").version,
+                    root=self.komodo_root,
+                    dist="-".join(platform.dist() if hasattr(platform, "dist") else "none")
+                )
+            )
 
-    for name in os.listdir(str(ctx.dstpath / "root" / "bin")):
-        if not pattern.match(name):
-            continue
+        python_paths = [
+            pth for pth in self.srcpy.site_paths if pth.startswith(str(self.srcpath))
+        ]
 
-        binpath = str(ctx.dstpath / "root" / "bin" / name)
-        libexecpath = str(ctx.dstpath / "root" / "libexec" / name)
+        with self.create_file(
+            Path("root") / self.dstpy.site_packages_path / "_komodo.pth"
+        ) as f:
+            print("\n".join(python_paths), file=f)
 
-        shutil.copy(binpath, libexecpath)
-        with open(binpath, "w") as f:
-            f.write(txt)
-        os.chmod(binpath, 0o755)
+        # Create shims
+        self.shim_pythons()
 
+        # Create & run komodo-update
+        with open(Path(__file__).parent / "update.py") as inf:
+            with self.create_file(
+                Path("root/bin/komodoenv-update"), file_mode=0o755
+            ) as outf:
+                outf.write(inf.read())
+        self.run("root/bin/komodoenv-update")
 
-def create(ctx):
-    ctx.dstpath.mkdir()
-    create_virtualenv(ctx)
-    create_enable_scripts(ctx)
-    create_config(ctx)
-    create_pth(ctx)
-    shim_pythons(ctx)
-    copy_update_script(ctx)
+        self.remove_file("root/shims/komodoenv")
+
+        if os.environ.get("SHELL", "").endswith("csh"):
+            enable_script = self.dstpath / "enable.csh"
+        else:
+            enable_script = self.dstpath / "enable"
+
+        print(
+            dedent(
+                """\
+
+        Komodoenv has successfully been generated. You can now pip-install software.
+
+            $ source {enable_script}
+        """
+            ).format(enable_script=enable_script)
+        )
