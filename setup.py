@@ -7,6 +7,7 @@ setup(
     packages=["komodoenv"],
     test_suite="tests",
     install_requires=[
+        "ansicolors",
         "PyYAML",
         "enum34;python_version < '3.4'",
         "mock;python_version < '3.3'",
@@ -16,7 +17,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "komodoenv = komodoenv.main:main"
+            "komodoenv = komodoenv.__main__:main"
         ]
     }
 )
