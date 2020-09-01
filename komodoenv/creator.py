@@ -66,17 +66,17 @@ if [ -n "${{BASH:-}}" -o -n "${{ZSH_VERSION:-}}" ]; then
     hash -r
 fi
 
-if [ -d {komodo_prefix}/../motd/scripts ]
+if [ -d {komodo_prefix}/motd/scripts ]
 then
-    for f in {komodo_prefix}/../motd/scripts/*
+    for f in {komodo_prefix}/motd/scripts/*
     do
         $f
     done
 fi
 
-if [ -d {komodo_prefix}/../motd/messages ]
+if [ -d {komodo_prefix}/motd/messages ]
 then
-    cat {komodo_prefix}/../motd/messages/*
+    cat {komodo_prefix}/motd/messages/*
 fi
 """
 
@@ -131,14 +131,14 @@ endif
 
 rehash
 
-if ( -d {komodo_prefix}/../motd/scripts ) then
-    foreach f ({komodo_prefix}/../motd/scripts/*)
+if ( -d {komodo_prefix}/motd/scripts ) then
+    foreach f ({komodo_prefix}/motd/scripts/*)
         $f
     end
 endif
 
-if ( -d {komodo_prefix}/../motd/messages ) then
-    cat {komodo_prefix}/../motd/messages/*
+if ( -d {komodo_prefix}/motd/messages ) then
+    cat {komodo_prefix}/motd/messages/*
 endif
 """
 
