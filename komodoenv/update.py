@@ -249,10 +249,13 @@ def get_pkg_version(config, srcpath, package="komodoenv"):
     )
     pattern = re.compile("^{}-(.+).dist-info".format(package))
 
+    matches = []
     for name in os.listdir(pkgdir):
         match = pattern.match(name)
         if match is not None:
-            return match[1]
+            matches.append(match[1])
+    if len(matches) > 0:
+        return max(matches)
 
 
 def can_update(config):
