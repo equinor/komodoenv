@@ -3,7 +3,6 @@ from setuptools import setup
 
 setup(
     name="komodoenv",
-    version="0.1.0",
     packages=["komodoenv"],
     test_suite="tests",
     install_requires=[
@@ -20,5 +19,9 @@ setup(
         "console_scripts": [
             "komodoenv = komodoenv.__main__:main"
         ]
+    },
+    use_scm_version={
+        "relative_to": __file__,
+        "write_to": "komodoenv/_version.py"
     }
 )
