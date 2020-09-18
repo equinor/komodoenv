@@ -8,6 +8,7 @@ setup(
     test_suite="tests",
     install_requires=[
         "ansicolors",
+        "distro",
         "PyYAML",
         "enum34;python_version < '3.4'",
         "mock;python_version < '3.3'",
