@@ -4,6 +4,7 @@ import sys
 import re
 import argparse
 import logging
+import distro
 from shutil import rmtree
 from pathlib import Path
 from komodoenv.update import rhel_version
@@ -69,6 +70,20 @@ def autodetect(root):
     return None
 
 
+def detect_rhel(komodo_prefix):
+    """Return the correct RHEL-suffixed Komodo release"""
+    if not komodo_prefix.is_dir():
+        raise ValueError("{} must be a directory".format(komodo_prefix))
+
+    if (komodo_prefix / "root").is_dir():
+        return komodo_prefix
+
+    if distro.id() != "rhel":
+        raise RuntimeError("komodoenv only supports Red Hat Enterprise Linux")
+
+    return komodo_prefix.parent / "{}-rhel{}".format(komodo_prefix.name, distro.major_version())
+
+
 def parse_args(args):
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -108,6 +123,7 @@ def parse_args(args):
     else:
         args.release = args.root / args.release
 
+    args.release = detect_rhel(args.release)
     args.destination = Path(args.destination).absolute()
 
     if args.release is None or not args.release.is_dir():
