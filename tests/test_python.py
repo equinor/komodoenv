@@ -1,6 +1,5 @@
 import sys
 from textwrap import dedent
-from six import ensure_binary
 from komodoenv.python import Python, PythonType
 
 
@@ -31,7 +30,7 @@ def test_ld_library_path():
     base = "/does/not/exist"
     py = Python(sys.executable, base)
 
-    expect = ensure_binary("{0}/lib64:{0}/lib\n".format(base))
+    expect = "{0}/lib64:{0}/lib\n".format(base).encode("utf-8")
     actual = py.call(script=b"import os;print(os.environ['LD_LIBRARY_PATH'])")
     assert expect == actual
 

@@ -5,9 +5,10 @@ import re
 import argparse
 import logging
 import distro
+import subprocess
+from typing import Union, Tuple
 from shutil import rmtree
 from pathlib import Path
-from komodoenv.update import rhel_version
 from komodoenv.creator import Creator
 from komodoenv.statfs import is_nfs
 from colors import red, yellow, strip_color
@@ -40,48 +41,59 @@ def get_release_maturity_text(release_path):
         )
 
 
-def autodetect(root):
-    """Autodetect komodo release heuristically"""
-    name = os.environ.get("KOMODO_RELEASE", "")
-    if not name:
-        return None
-
-    name = os.environ["KOMODO_RELEASE"]
-
-    release_root = root / os.environ["KOMODO_RELEASE"]
-    if not release_root.is_dir():
-        return None
-
-    match = re.search("(-py[0-9]+(?:-rhel[0-9]+)?)$", name)
-    if not match:
-        # Unrecognised suffix -- can't track concrete release
-        return
-
-    suffix = match[1]
-    for mode in "stable", "testing", "unstable", "bleeding":
-        dir_ = root / (mode + suffix)
-        print(dir_)
-        if not (dir_ / "root").is_dir():
-            continue
-        symlink = dir_.resolve()
-        if symlink.name == name:
-            return symlink
-
-    return None
-
-
-def detect_rhel(komodo_prefix):
-    """Return the correct RHEL-suffixed Komodo release"""
-    if not komodo_prefix.is_dir():
-        raise ValueError("{} must be a directory".format(komodo_prefix))
-
-    if (komodo_prefix / "root").is_dir():
-        return komodo_prefix
+def distro_suffix():
+    # Workaround to make tests pass on Github Actions
+    if "GITHUB_ACTIONS" in os.environ:
+        return "-rhel7"
 
     if distro.id() != "rhel":
-        raise RuntimeError("komodoenv only supports Red Hat Enterprise Linux")
+        sys.exit("komodoenv only supports Red Hat Enterprise Linux")
+    return f"-rhel{distro.major_version()}"
 
-    return komodo_prefix.parent / "{}-rhel{}".format(komodo_prefix.name, distro.major_version())
+
+def resolve_release(root: Union[Path, str], name: str) -> Tuple[Path, Path]:
+    """Autodetect komodo release heuristically"""
+    if not (root / name / "enable").is_file():
+        sys.exit(f"'{root / name}' is not a valid komodo release")
+
+    lines = (
+        subprocess.check_output(
+            [
+                "/bin/bash",
+                "-c",
+                f"source {root / name / 'enable'};which python;python --version",
+            ]
+        )
+        .decode("utf-8")
+        .splitlines(keepends=False)
+    )
+
+    assert len(lines) == 2
+    actual_path = Path(lines[0]).parent.parent.parent  # <path>/root/bin/python
+    major, minor = re.search(r"Python (\d).(\d+)", lines[1]).groups()
+    pyver = "-py" + major + minor
+
+    m = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", name)
+    assert m is not None
+    name = m[1] + pyver
+
+    print(f"Looking for {name}")
+
+    for mode in "stable", "testing", "unstable", "bleeding":
+        for rhver in "", distro_suffix():
+            dir_ = root / (mode + pyver + rhver)
+            track = root / (mode + pyver)
+            if not (dir_ / "root").is_dir():
+                # stable-rhel7 isn't a thing. Try resolving and appending 'rhver'
+                dir_ = (root / (mode + pyver)).resolve()
+                dir_ = dir_.parent / (dir_.name + distro_suffix())
+            if not (dir_ / "root").is_dir():
+                continue
+            symlink = dir_.resolve()
+            if symlink.name == actual_path.name:
+                return (symlink, track)
+
+    sys.exit("Could not automatically detect Komodo release")
 
 
 def parse_args(args):
@@ -97,8 +109,15 @@ def parse_args(args):
         "-r",
         "--release",
         type=str,
-        required=False,
+        default=os.environ.get("KOMODO_RELEASE", "bleeding"),
         help="Komodo release to base komodoenv on. Defaults to currently active komodo release",
+    )
+    ap.add_argument(
+        "-t",
+        "--track",
+        type=str,
+        default=None,
+        help="Komodo release on which to base updates",
     )
     ap.add_argument(
         "--root",
@@ -116,14 +135,14 @@ def parse_args(args):
     args.root = Path(args.root)
     assert args.root.is_dir()
 
-    if args.release is None:
-        args.release = autodetect(args.root)
-    elif "/" in args.release:
+    if "/" in args.release:
         args.release = Path(args.release)
-    else:
-        args.release = args.root / args.release
+    elif isinstance(args.release, str):
+        args.release = Path(args.root) / args.release
 
-    args.release = detect_rhel(args.release)
+    if not args.release or not args.track:
+        args.release, args.track = resolve_release(args.root, str(args.release))
+    args.track = Path(args.track)
     args.destination = Path(args.destination).absolute()
 
     if args.release is None or not args.release.is_dir():
@@ -163,7 +182,7 @@ def main(args=None):
         sys.exit(1)
 
     use_color = args.force_color or (sys.stdout.isatty() and sys.stderr.isatty())
-    release_text = get_release_maturity_text(args.release)
+    release_text = get_release_maturity_text(args.track)
     if not use_color:
         texts = {key: strip_color(val) for key, val in texts.items()}
         release_text = strip_color(release_text)
@@ -174,7 +193,7 @@ def main(args=None):
     if not is_nfs(args.destination):
         print(texts["nfs"], file=sys.stderr)
 
-    creator = Creator(args.root, args.release, args.destination, use_color)
+    creator = Creator(args.root, args.release, args.track, args.destination, use_color)
     creator.create()
 
 

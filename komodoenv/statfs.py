@@ -11,7 +11,6 @@ from ctypes import (
     byref,
     create_string_buffer,
 )
-from six import ensure_binary
 
 
 # From /usr/include/linux/magic.h
