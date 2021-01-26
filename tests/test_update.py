@@ -2,7 +2,6 @@ from komodoenv import update
 from textwrap import dedent
 from pkg_resources import get_distribution
 import time
-import six
 import os
 import sys
 
@@ -27,9 +26,9 @@ def test_rewrite_executable_python():
     lines[0] = "#!" + python
 
     actual = update.rewrite_executable(
-        "/prog/res/komodo/bin/pip", python, six.ensure_binary(pip)
+        "/prog/res/komodo/bin/pip", python, pip.encode("utf-8")
     )
-    assert six.ensure_binary("\n".join(lines)) == actual
+    assert "\n".join(lines).encode("utf-8") == actual
 
 
 def test_rewrite_executable_binary():
@@ -45,8 +44,8 @@ def test_rewrite_executable_binary():
     """
     )
 
-    assert six.ensure_binary(expect) == update.rewrite_executable(
-        "/prog/res/komodo/bin/bash", python, six.ensure_binary(sh)
+    assert expect.encode("utf-8") == update.rewrite_executable(
+        "/prog/res/komodo/bin/bash", python, sh
     )
 
 
@@ -67,8 +66,8 @@ def test_rewrite_executable_other_shebang():
     """
     )
 
-    assert six.ensure_binary(expect) == update.rewrite_executable(
-        "/prog/res/komodo/bin/gem", python, six.ensure_binary(gem)
+    assert expect.encode("utf-8") == update.rewrite_executable(
+        "/prog/res/komodo/bin/gem", python, gem.encode("utf-8")
     )
 
 

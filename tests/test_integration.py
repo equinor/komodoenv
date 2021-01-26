@@ -1,25 +1,8 @@
 import os
 import sys
 import pytest
-from six import ensure_binary
 from subprocess import Popen, PIPE, check_output, CalledProcessError
-from komodoenv.__main__ import main
-
-
-ENABLE_BASH = """\
-export KOMODO_RELEASE={name}
-
-export _PRE_KOMODO_PATH="$PATH"
-export PATH={root}/{name}/root/bin${{PATH:+:${{PATH}}}}
-
-hash -r
-"""
-
-
-def _run(args, script):
-    proc = Popen(args, stdin=PIPE)
-    proc.communicate(ensure_binary(script))
-    return proc.returncode
+from komodoenv.__main__ import main as _main
 
 
 def bash(script):
@@ -45,77 +28,6 @@ def test_test_csh():
     assert csh("echo $OH_NO_AN_UNBOUND_VARIABLE") == 1
 
 
-@pytest.fixture(scope="module")
-def komodo_root(tmp_path_factory):
-    """Here we mock a komodo environment.
-
-    "Komodo environment? You mean a garbage dumb? Har har."
-    """
-    path = tmp_path_factory.mktemp("prog-res-komodo")
-
-    symlinks = {
-        "2030.01-py36": "2030.01.00-py36",
-        "unstable-py36": "2030.01-py36",
-        "testing-py36": "2030.01-py36",
-        "stable-py36": "2030.01-py36",
-        "2030.01-py27": "2030.01.00-py27",
-        "unstable-py27": "2030.01.00-py27",
-        "testing-py26": "2030.01.00-py27",
-        "stable-py36": "2030.01.00-py27",
-        "stable": "stable-py36",
-    }
-
-    # Install and configure python 2
-    check_output(
-        [
-            sys.executable,
-            "-m",
-            "virtualenv",
-            "-ppython2",
-            str(path / "2030.01.00-py27/root"),
-        ]
-    )
-    check_output(
-        [str(path / "2030.01.00-py27/root/bin/pip"), "install", "numpy==1.16.6"]
-    )
-
-    # Install and configure python 3
-    check_output(
-        [
-            sys.executable,
-            "-m",
-            "virtualenv",
-            "-ppython3",
-            str(path / "2030.01.00-py36/root"),
-        ]
-    )
-    check_output(
-        [str(path / "2030.01.00-py36/root/bin/pip"), "install", "numpy==1.18.4"]
-    )
-
-    # Install and configure python 3 again
-    check_output(
-        [
-            sys.executable,
-            "-m",
-            "virtualenv",
-            "-ppython3",
-            str(path / "2030.01.01-py36/root"),
-        ]
-    )
-    check_output(
-        [str(path / "2030.01.01-py36/root/bin/pip"), "install", "numpy==1.19.1"]
-    )
-
-    for name in os.listdir(str(path)):
-        (path / name / "enable").write_text(ENABLE_BASH.format(root=path, name=name))
-
-    for src, dst in symlinks.items():
-        (path / src).symlink_to(path / dst)
-
-    return path
-
-
 @pytest.fixture(scope="function")
 def komodoenv_path(komodo_root, tmp_path_factory, request):
     marker = request.node.get_closest_marker("releases")
@@ -130,10 +42,11 @@ def komodoenv_path(komodo_root, tmp_path_factory, request):
 
 def test_init_bash(komodo_root, tmp_path):
     main(
-        map(
-            str,
-            ["--root", komodo_root, "--release", "2030.01.00-py36", tmp_path / "kenv"],
-        )
+        "--root",
+        str(komodo_root),
+        "--release",
+        "2030.01.00-py36",
+        str(tmp_path / "kenv"),
     )
 
     script = """\
@@ -150,10 +63,11 @@ def test_init_bash(komodo_root, tmp_path):
 
 def test_init_csh(komodo_root, tmp_path):
     main(
-        map(
-            str,
-            ["--root", komodo_root, "--release", "2030.01.00-py36", tmp_path / "kenv"],
-        )
+        "--root",
+        str(komodo_root),
+        "--release",
+        "2030.01.00-py36",
+        str(tmp_path / "kenv"),
     )
 
     script = """\
@@ -170,9 +84,11 @@ def test_init_csh(komodo_root, tmp_path):
 
 def test_update(request, komodo_root, tmp_path):
     main(
-        map(
-            str, ["--root", komodo_root, "--release", "2030.01-py36", tmp_path / "kenv"]
-        )
+        "--root",
+        str(komodo_root),
+        "--release",
+        "2030.01-py36",
+        str(tmp_path / "kenv"),
     )
 
     # Verify that komodo hasn't been updated
@@ -217,28 +133,24 @@ def test_update(request, komodo_root, tmp_path):
 
 
 def test_autodetect(komodo_root, tmp_path):
-    script = """\
+    script = f"""\
     # Source komodo release and autodetect
-    source {root}/stable/enable
-    {python} -m komodoenv --root={root} {kmd}
+    source {komodo_root}/stable/enable
+    {sys.executable} -m komodoenv --root={komodo_root} {tmp_path}/kenv
 
     # Test
-    source {kmd}/enable
-    [[ $(which python) == "{kmd}/root/bin/python"  ]]
-    """.format(
-        root=komodo_root, python=sys.executable, kmd=tmp_path / "kenv"
-    )
-
+    source {tmp_path}/kenv/enable
+    [[ $(which python) == "{tmp_path}/kenv/root/bin/python"  ]]
+    """
     assert bash(script) == 0
 
 
-def test_autodetect_fail(komodo_root, tmp_path):
-    script = """\
-    # Unset KOMODO_RELEASE in case it is set prior to pytest
-    unset KOMODO_RELEASE
-    {python} -m komodoenv --root={root} {kmd}
-    """.format(
-        root=komodo_root, python=sys.executable, kmd=tmp_path / "kenv"
-    )
+def main(*args):
+    """Convenience function because it looks nicer"""
+    _main(args)
 
-    assert bash(script) == 1
+
+def _run(args, script):
+    proc = Popen(args, stdin=PIPE)
+    proc.communicate(script.encode("utf-8"))
+    return proc.returncode
