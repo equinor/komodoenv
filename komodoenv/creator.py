@@ -12,6 +12,7 @@ from colors import green, strip_color
 from pkg_resources import get_distribution
 
 from komodoenv.python import Python
+from komodoenv.bundle import get_bundled_wheel
 
 
 class _OpenChmod:
@@ -85,6 +86,29 @@ class Creator:
         self.print_action("run", path)
         subprocess.check_output([str(self.dstpath / path)])
 
+    def pip_install(self, package: str) -> None:
+        pip_wheel = get_bundled_wheel("pip")
+        dst_wheel = get_bundled_wheel(package)
+        self.print_action("install", package)
+
+        env = os.environ.copy()
+        env["PYTHONPATH"] = pip_wheel
+
+        subprocess.check_output(
+            [
+                str(self.dstpath / "root/bin/python"),
+                "-m",
+                "pip",
+                "install",
+                "--no-cache-dir",
+                "--no-deps",
+                "--disable-pip-version-check",
+                "--no-python-version-warning",
+                dst_wheel,
+            ],
+            env=env,
+        )
+
     def create(self):
         self.dstpath.mkdir()
 
@@ -122,6 +146,9 @@ class Creator:
             ) as outf:
                 outf.write(inf.read())
         self.run("root/bin/komodoenv-update")
+        self.pip_install("setuptools")
+        self.pip_install("wheel")
+        self.pip_install("pip")
 
         self.remove_file("root/shims/komodoenv")
 
