@@ -18,9 +18,9 @@ from textwrap import dedent
 try:
     from distro import id as distro_id, version_parts as distro_versions
 except ImportError:
+
     def distro_id():
         return "none"
-
 
     def distro_versions():
         return (0, 0, 0)
