@@ -23,7 +23,7 @@ except ImportError:
         return "none"
 
     def distro_versions():
-        return (0, 0, 0)
+        return ("0", "0", "0")
 
 
 ENABLE_BASH = """\
