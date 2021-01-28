@@ -1,4 +1,4 @@
 try:
-    from komodoenv._version import __version__
+    from komodoenv._version import version as __version__
 except ImportError:
     __version__ = "0.0.0"

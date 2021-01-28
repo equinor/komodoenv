@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import sys
 import re
@@ -6,7 +5,7 @@ import argparse
 import logging
 import distro
 import subprocess
-from typing import Union, Tuple
+from typing import List, Optional, Tuple, Union
 from shutil import rmtree
 from pathlib import Path
 from komodoenv.creator import Creator
@@ -14,7 +13,7 @@ from komodoenv.statfs import is_nfs
 from colors import red, yellow, strip_color
 
 
-def get_release_maturity_text(release_path):
+def get_release_maturity_text(release_path: Path) -> str:
     """Returns a comment informing the user about the maturity of the release that
     they've chosen. Eg, warn users if they want bleeding, pat them on the back
      if they want stable, etc.
@@ -41,7 +40,7 @@ def get_release_maturity_text(release_path):
         )
 
 
-def distro_suffix():
+def distro_suffix() -> str:
     # Workaround to make tests pass on Github Actions
     if "GITHUB_ACTIONS" in os.environ:
         return "-rhel7"
@@ -51,7 +50,7 @@ def distro_suffix():
     return f"-rhel{distro.major_version()}"
 
 
-def resolve_release(root: Union[Path, str], name: str) -> Tuple[Path, Path]:
+def resolve_release(root: Path, name: str) -> Tuple[Path, Path]:
     """Autodetect komodo release heuristically"""
     if not (root / name / "enable").is_file():
         sys.exit(f"'{root / name}' is not a valid komodo release")
@@ -70,7 +69,10 @@ def resolve_release(root: Union[Path, str], name: str) -> Tuple[Path, Path]:
 
     assert len(lines) == 2
     actual_path = Path(lines[0]).parent.parent.parent  # <path>/root/bin/python
-    major, minor = re.search(r"Python (\d).(\d+)", lines[1]).groups()
+    match = re.search(r"Python (\d).(\d+)", lines[1])
+    if match is None:
+        sys.exit(f"An error occurred while detecting the version of Python of '{root}'")
+    major, minor = match.groups()
     pyver = "-py" + major + minor
 
     m = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", name)
@@ -96,7 +98,7 @@ def resolve_release(root: Union[Path, str], name: str) -> Tuple[Path, Path]:
     sys.exit("Could not automatically detect Komodo release")
 
 
-def parse_args(args):
+def parse_args(in_args: List[str]) -> argparse.Namespace:
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "-f",
@@ -130,7 +132,7 @@ def parse_args(args):
     )
     ap.add_argument("destination", type=str, help="Where to create komodoenv")
 
-    args = ap.parse_args(args)
+    args = ap.parse_args(in_args)
 
     args.root = Path(args.root)
     assert args.root.is_dir()
@@ -158,7 +160,7 @@ def parse_args(args):
     return args
 
 
-def main(args=None):
+def main(in_args: Optional[List[str]] = None) -> None:
     texts = {
         "beta": red(
             "Komodoenv is still in beta. Be aware that issues might occur and "
@@ -171,9 +173,9 @@ def main(args=None):
         ),
     }
 
-    if args is None:
-        args = sys.argv[1:]
-    args = parse_args(args)
+    if in_args is None:
+        in_args = sys.argv[1:]
+    args = parse_args(in_args)
 
     if args.destination.is_dir() and args.force:
         rmtree(str(args.destination), ignore_errors=True)

@@ -1,6 +1,7 @@
 import os
 import json
 
+from typing import Any, List, Optional, Tuple
 from subprocess import Popen, PIPE
 from pathlib import Path
 from enum import Enum
@@ -13,8 +14,8 @@ class PythonType(Enum):
     VENV = 3
 
 
-class Python(object):
-    def __init__(self, executable, komodo_prefix=None):
+class Python:
+    def __init__(self, executable: Path, komodo_prefix: Path = None) -> None:
         """"""
         self.executable = Path(executable)
 
@@ -26,15 +27,15 @@ class Python(object):
 
         self.root = self.executable.parent.parent
         self.type = PythonType.UNKNOWN
-        self.version_info = None
+        self.version_info: Tuple[Any, ...] = (0, 0, 0)
 
-    def make_dst(self, executable):
+    def make_dst(self, executable: Path) -> "Python":
         py = Python(executable, self.komodo_prefix)
         py.type = self.type
         py.version_info = self.version_info
         return py
 
-    def detect(self):
+    def detect(self) -> None:
         """Detects what type of Python installation this is"""
         # Get python version_info
         script = b"import sys,json;print(json.dumps(sys.version_info[:]))"
@@ -60,14 +61,19 @@ class Python(object):
         else:
             self.type = PythonType.REAL
 
-    def is_shim(self):
+    def is_shim(self) -> bool:
         return self.type == PythonType.SHIM
 
     @property
-    def site_packages_path(self):
+    def site_packages_path(self) -> Path:
         return self.root / "lib/python{}.{}/site-packages".format(*self.version_info)
 
-    def call(self, args=None, env=None, script=None):
+    def call(
+        self,
+        args: Optional[List[str]] = None,
+        env: Optional[dict] = None,
+        script: Optional[bytes] = None,
+    ) -> bytes:
         if args is None:
             args = []
         if env is None:
@@ -81,8 +87,8 @@ class Python(object):
         )
         env["LD_LIBRARY_PATH"] = "{0}/lib64:{0}/lib".format(self.komodo_prefix)
 
-        args = [self.executable] + args
-        proc = Popen(map(str, args), stdin=PIPE, stdout=PIPE, env=env)
+        args = [str(self.executable)] + [str(x) for x in args]
+        proc = Popen(args, stdin=PIPE, stdout=PIPE, env=env)
         stdout, _ = proc.communicate(script)
 
         return stdout

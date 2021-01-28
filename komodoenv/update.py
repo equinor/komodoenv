@@ -10,8 +10,8 @@ import os
 import re
 import sys
 import shutil
-from typing import List
-from argparse import ArgumentParser
+import argparse
+from typing import List, Optional, Tuple
 from textwrap import dedent
 
 
@@ -19,10 +19,10 @@ try:
     from distro import id as distro_id, version_parts as distro_versions
 except ImportError:
 
-    def distro_id():
+    def distro_id() -> str:
         return "none"
 
-    def distro_versions():
+    def distro_versions() -> Tuple[int, int, int]:
         return (0, 0, 0)
 
 
@@ -193,7 +193,7 @@ def rhel_version_suffix() -> str:
     return "-" + distro_id() + distro_versions()[0]
 
 
-def check_same_distro(config: dict):
+def check_same_distro(config: dict) -> None:
     """Python might not run properly on a different distro than the one that
     komodoenv was first generated for. Returns True if the distro in the config
     matches ours, False otherwise.
@@ -213,7 +213,7 @@ def check_same_distro(config: dict):
 
 def get_pkg_version(
     config: dict, srcpath: str, package: str = "komodoenv"
-) -> List[str]:
+) -> Optional[str]:
     """Locate `package`'s version in the current komodo distribution. This format is
     defined in PEP 376 "Database of Installed Python Distributions".
 
@@ -231,6 +231,7 @@ def get_pkg_version(
             matches.append(match[1])
     if len(matches) > 0:
         return max(matches)
+    return None
 
 
 def can_update(config: dict) -> bool:
@@ -251,7 +252,7 @@ def can_update(config: dict) -> bool:
     return current_maj == updated_maj
 
 
-def write_config(config: dict):
+def write_config(config: dict) -> None:
     with open(
         os.path.join(os.path.dirname(__file__), "..", "..", "komodoenv.conf"), "w"
     ) as f:
@@ -283,7 +284,7 @@ def should_update(config: dict, current: dict) -> bool:
     )
 
 
-def enable_script(fmt: str, komodo_prefix: str, komodoenv_prefix: str):
+def enable_script(fmt: str, komodo_prefix: str, komodoenv_prefix: str) -> str:
     return fmt.format(
         komodo_prefix=komodo_prefix,
         komodo_release=os.path.basename(komodo_prefix),
@@ -292,14 +293,14 @@ def enable_script(fmt: str, komodo_prefix: str, komodoenv_prefix: str):
     )
 
 
-def update_enable_script(komodo_prefix: str, komodoenv_prefix: str):
+def update_enable_script(komodo_prefix: str, komodoenv_prefix: str) -> None:
     with open(os.path.join(komodoenv_prefix, "enable"), "w") as f:
         f.write(enable_script(ENABLE_BASH, komodo_prefix, komodoenv_prefix))
     with open(os.path.join(komodoenv_prefix, "enable.csh"), "w") as f:
         f.write(enable_script(ENABLE_CSH, komodo_prefix, komodoenv_prefix))
 
 
-def rewrite_executable(path: str, python: str, text: bytes):
+def rewrite_executable(path: str, python: str, text: bytes) -> bytes:
     path = os.path.realpath(path)
     root = os.path.realpath(os.path.join(path, "..", ".."))
     libs = os.pathsep.join((os.path.join(root, "lib"), os.path.join(root, "lib64")))
@@ -323,7 +324,7 @@ def rewrite_executable(path: str, python: str, text: bytes):
     ).encode("utf8")
 
 
-def update_bins(srcpath: str, dstpath: str):
+def update_bins(srcpath: str, dstpath: str) -> None:
     python = os.path.join(dstpath, "root", "bin", "python")
     shimdir = os.path.join(dstpath, "root", "shims")
     if os.path.isdir(shimdir):
@@ -348,7 +349,7 @@ def update_bins(srcpath: str, dstpath: str):
         os.chmod(shimpath, 0o755)
 
 
-def create_pth(config: dict, srcpath: str, dstpath: str):
+def create_pth(config: dict, srcpath: str, dstpath: str) -> None:
     path = os.path.join(
         dstpath,
         "root",
@@ -371,11 +372,11 @@ def create_pth(config: dict, srcpath: str, dstpath: str):
             )
 
 
-def parse_args(args: List[str]):
+def parse_args(args: Optional[List[str]]) -> argparse.Namespace:
     if args is None:
         args = sys.argv[1:]
 
-    ap = ArgumentParser()
+    ap = argparse.ArgumentParser()
     ap.add_argument(
         "--check",
         action="store_true",
@@ -386,8 +387,8 @@ def parse_args(args: List[str]):
     return ap.parse_args(args)
 
 
-def main(args: List[str] = None):
-    args = parse_args(args)
+def main(argv: List[str] = None) -> None:
+    args = parse_args(argv)
 
     config = read_config()
     current = current_track(config)

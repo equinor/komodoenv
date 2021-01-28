@@ -3,11 +3,8 @@ from pathlib import Path
 from ctypes import (
     CDLL,
     Structure,
-    c_int32,
-    c_uint32,
     c_int64,
     c_uint64,
-    c_char_p,
     byref,
     create_string_buffer,
 )
@@ -40,11 +37,10 @@ class _Statfs(Structure):
     )
 
 
-def _test_fs_type(path, f_type):
+def _test_fs_type(path: Path, f_type: int) -> bool:
     if sys.platform != "linux":
         return
 
-    path = Path(path)
     while not path.is_dir():
         path = path.parent
 
@@ -56,11 +52,11 @@ def _test_fs_type(path, f_type):
     return stat.f_type == f_type
 
 
-def is_tmpfs(path):
+def is_tmpfs(path: str) -> bool:
     """Test if `path` is on a `tmpfs` filesystem."""
-    return _test_fs_type(path, _TMPFS_MAGIC)
+    return _test_fs_type(Path(path), _TMPFS_MAGIC)
 
 
-def is_nfs(path):
+def is_nfs(path: str) -> bool:
     """Test if `path` is on a `nfs` filesystem."""
-    return _test_fs_type(path, _NFS_SUPER_MAGIC)
+    return _test_fs_type(Path(path), _NFS_SUPER_MAGIC)
