@@ -18,12 +18,14 @@ from textwrap import dedent
 try:
     from distro import id as distro_id, version_parts as distro_versions
 except ImportError:
-
+    # The 'distro' package isn't installed. Pretend we're on RHEL7.
+    #
+    # yum install python36-distro
     def distro_id():
-        return "none"
+        return "rhel"
 
     def distro_versions():
-        return ("0", "0", "0")
+        return ("7", "0", "0")
 
 
 ENABLE_BASH = """\
