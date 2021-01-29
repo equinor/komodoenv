@@ -37,8 +37,43 @@ def test_resolve_simple(komodo_root, track_name, name, expect):
         "unstable-py38",
         "2030.03.00-py38",
         "2030.03.00-py38-rhel9",
+        # Singular release
+        "2030.01.01-py36"
     ],
 )
 def test_resolve_fail(komodo_root, name):
     with pytest.raises(SystemExit):
         main.resolve_release(komodo_root, name)
+
+
+def test_resolve_fail_singular(komodo_root):
+    """
+    When making a komodoenv of a singular release without --no-update, inform
+    the user and exit.
+    """
+    with pytest.raises(SystemExit) as exc:
+        main.resolve_release(komodo_root, "2030.01.01-py36")
+    assert "--no-update" in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    "expect,name",
+    [
+        # Bleeding is py36, rhel7
+        ("bleeding-py36-rhel7", "bleeding"),
+        ("bleeding-py36-rhel7", "bleeding-py3"),
+        ("bleeding-py36-rhel7", "bleeding-py36"),
+        # Stable is py36, unspecified rhel
+        ("2030.01.00-py36", "stable"),
+        ("2030.01.00-py36", "stable-py3"),
+        ("2030.01.00-py36", "stable-py36"),
+        ("2030.01.00-py36", "2030.01"),
+        ("2030.01.00-py36", "2030.01.00-py36"),
+        # Singular release
+        ("2030.01.01-py36", "2030.01.01-py36"),
+    ]
+)
+def test_resolve_no_update(komodo_root, expect, name):
+    release, tracked = main.resolve_release(komodo_root, name, no_update=True)
+    assert release == tracked
+    assert release == komodo_root / expect
