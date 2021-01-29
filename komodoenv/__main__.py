@@ -36,7 +36,7 @@ def get_release_maturity_text(release_path):
         return "Tracking a stable release of komodo.\n"
     else:
         return yellow(
-            "Warning: Tracking an untracked release. It will not receive updates. "
+            "Warning: Tracking a singular release. It will not receive updates. "
             "This'll require recreating komodoenv to get updated software.\n"
         )
 
@@ -51,7 +51,7 @@ def distro_suffix():
     return f"-rhel{distro.major_version()}"
 
 
-def resolve_release(root: Union[Path, str], name: str) -> Tuple[Path, Path]:
+def resolve_release(root: Path, name: str, no_update: bool = False) -> Tuple[Path, Path]:
     """Autodetect komodo release heuristically"""
     if not (root / name / "enable").is_file():
         sys.exit(f"'{root / name}' is not a valid komodo release")
@@ -70,7 +70,13 @@ def resolve_release(root: Union[Path, str], name: str) -> Tuple[Path, Path]:
 
     assert len(lines) == 2
     actual_path = Path(lines[0]).parent.parent.parent  # <path>/root/bin/python
-    major, minor = re.search(r"Python (\d).(\d+)", lines[1]).groups()
+    if no_update:
+        return (actual_path, actual_path)
+
+    match = re.search(r"Python (\d).(\d+)", lines[1])
+    if match is None:
+        sys.exit(f"An error occurred while detecting the version of Python of '{root}'")
+    major, minor = match.groups()
     pyver = "-py" + major + minor
 
     m = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", name)
@@ -93,7 +99,8 @@ def resolve_release(root: Union[Path, str], name: str) -> Tuple[Path, Path]:
             if symlink.name == actual_path.name:
                 return (symlink, track)
 
-    sys.exit("Could not automatically detect Komodo release")
+    sys.exit("Could not automatically detect an appropriate Komodo release to track (one of: stable, testing, unstable, bleeding).\n"
+             "Use --no-update to make a komodoenv of a singular release.")
 
 
 def parse_args(args):
@@ -120,6 +127,12 @@ def parse_args(args):
         help="Komodo release on which to base updates",
     )
     ap.add_argument(
+        "--no-update",
+        action="store_true",
+        default=False,
+        help="Disable update mechanism. Required for komodoenvs of singular releases",
+    )
+    ap.add_argument(
         "--root",
         type=str,
         default="/prog/res/komodo",
@@ -141,7 +154,7 @@ def parse_args(args):
         args.release = Path(args.root) / args.release
 
     if not args.release or not args.track:
-        args.release, args.track = resolve_release(args.root, str(args.release))
+        args.release, args.track = resolve_release(args.root, str(args.release), no_update=args.no_update)
     args.track = Path(args.track)
     args.destination = Path(args.destination).absolute()
 
