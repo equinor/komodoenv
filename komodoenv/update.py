@@ -30,19 +30,19 @@ except ImportError:
 
 ENABLE_BASH = """\
 disable_komodo () {{
-    if [ -n "${{_PRE_KOMODO_PATH:-}}" ]; then
+    if [[ -v _PRE_KOMODO_PATH ]]; then
         export PATH="${{_PRE_KOMODO_PATH}}"
         unset _PRE_KOMODO_PATH
     fi
-    if [ -n "${{_PRE_KOMODO_MANPATH:-}}" ]; then
+    if [[ -v _PRE_KOMODO_MANPATH ]]; then
         export MANPATH="${{_PRE_KOMODO_MANPATH}}"
         unset _PRE_KOMODO_MANPATH
     fi
-    if [ -n "${{_PRE_KOMODO_LD_LIBRARY_PATH:-}}" ]; then
+    if [[ -v _PRE_KOMODO_LD_LIBRARY_PATH ]]; then
         export LD_LIBRARY_PATH="${{_PRE_KOMODO_LD_LIBRARY_PATH}}"
         unset _PRE_KOMODO_LD_LIBRARY_PATH
     fi
-    if [ -n "${{_PRE_KOMODO_PS1:-}}" ]; then
+    if [[ -v _PRE_KOMODO_PS1 ]]; then
         export PS1="${{_PRE_KOMODO_PS1}}"
         unset _PRE_KOMODO_PS1
     fi
