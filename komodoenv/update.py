@@ -70,7 +70,7 @@ export _PRE_KOMODO_MANPATH="${{MANPATH:-}}"
 export MANPATH={komodoenv_prefix}/root/share/man:{komodo_prefix}/root/share/man${{MANPATH:+:${{MANPATH}}}}
 
 export _PRE_KOMODO_LD_LIBRARY_PATH="${{LD_LIBRARY_PATH:-}}"
-export LD_LIBRARY_PATH={komodo_prefix}/root/lib:{komodo_prefix}/lib64${{LD_LIBRARY_PATH:+${{LD_LIBRARY_PATH}}}}
+export LD_LIBRARY_PATH={komodo_prefix}/root/lib:{komodo_prefix}/root/lib64${{LD_LIBRARY_PATH:+:${{LD_LIBRARY_PATH}}}}
 
 export _PRE_KOMODO_PS1="${{PS1:-}}"
 export PS1="({komodoenv_release} + {komodo_release}) ${{PS1:-}}"
