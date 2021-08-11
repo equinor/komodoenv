@@ -3,11 +3,8 @@ from pathlib import Path
 from ctypes import (
     CDLL,
     Structure,
-    c_int32,
-    c_uint32,
     c_int64,
     c_uint64,
-    c_char_p,
     byref,
     create_string_buffer,
 )

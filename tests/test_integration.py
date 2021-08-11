@@ -28,18 +28,6 @@ def test_test_csh():
     assert csh("echo $OH_NO_AN_UNBOUND_VARIABLE") == 1
 
 
-@pytest.fixture(scope="function")
-def komodoenv_path(komodo_root, tmp_path_factory, request):
-    marker = request.node.get_closest_marker("releases")
-    if marker is None:
-        releases = ["stable"]
-    else:
-        releases = marker.args
-
-    main(map(str, ["--root", komodo_root, "--release", release, tmp_path]))
-    return tmp_path
-
-
 def test_init_bash(komodo_root, tmp_path):
     main(
         "--root",

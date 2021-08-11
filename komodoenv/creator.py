@@ -1,13 +1,8 @@
 from pathlib import Path
 import subprocess
-import shutil
-import re
 import os
-import sys
-import logging
 import distro
 from textwrap import dedent
-from tempfile import mkdtemp
 from colors import green, strip_color
 from pkg_resources import get_distribution
 
@@ -69,7 +64,6 @@ class Creator:
     def venv(self):
         self.print_action("venv", "using {}".format(self.srcpy.executable))
 
-        ld_library_path = os.environ.get("LD_LIBRARY_PATH")
         env = {"LD_LIBRARY_PATH": str(self.srcpath / "root" / "lib"), **os.environ}
         subprocess.check_output(
             [
