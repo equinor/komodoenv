@@ -164,6 +164,3 @@ def test_get_pkg_version_none():
 
     assert ver is None
 
-
-def test_update_enable():
-    pass

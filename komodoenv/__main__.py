@@ -6,7 +6,7 @@ import argparse
 import logging
 import distro
 import subprocess
-from typing import Union, Tuple
+from typing import Tuple
 from shutil import rmtree
 from pathlib import Path
 from komodoenv.creator import Creator

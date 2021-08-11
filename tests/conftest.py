@@ -3,8 +3,7 @@ import re
 import pytest
 from typing import List, Optional
 from pathlib import Path
-from textwrap import dedent
-from subprocess import Popen, PIPE, check_output, CalledProcessError
+from subprocess import check_output
 
 
 @pytest.fixture(scope="session")
