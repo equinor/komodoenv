@@ -12,14 +12,22 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ ubuntu-18.04, ubuntu-latest ]
+        python-version: [ 3.6, 3.8 ]
+        exclude:
+          - os: ubuntu-latest
+            python-version: 3.6
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.6
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: ${{ matrix.python }}
     - name: Install Ubuntu Packages
       run: |
         sudo apt-get -y install tcsh python3-venv python3.8-venv
