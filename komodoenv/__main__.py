@@ -56,13 +56,17 @@ def resolve_release(root: Path, name: str, no_update: bool = False) -> Tuple[Pat
     if not (root / name / "enable").is_file():
         sys.exit(f"'{root / name}' is not a valid komodo release")
 
+    env = os.environ.copy()
+    if "BASH_ENV" in env:
+        del env["BASH_ENV"]
     lines = (
         subprocess.check_output(
             [
                 "/bin/bash",
                 "-c",
                 f"source {root / name / 'enable'};which python;python --version",
-            ]
+            ],
+            env=env,
         )
         .decode("utf-8")
         .splitlines(keepends=False)
