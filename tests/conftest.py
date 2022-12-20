@@ -7,19 +7,6 @@ from subprocess import check_output
 
 
 @pytest.fixture(scope="session")
-def python36_path():
-    """Locate Python 3.6 executable
-
-    RHEL7/8      : yum install python3-dev
-    Ubuntu 18.04 : apt-get install python3-{dev,venv}
-    """
-    exe = "/usr/bin/python3.6"
-    if not os.path.isfile(exe):
-        raise RuntimeError("Could not locate python3.6")
-    return exe
-
-
-@pytest.fixture(scope="session")
 def python38_path():
     """Locate Python 3.8 executable
 
@@ -38,7 +25,7 @@ def python38_path():
 
 
 @pytest.fixture(scope="session")
-def komodo_root(tmp_path_factory, python36_path, python38_path):
+def komodo_root(tmp_path_factory, python38_path):
     """Komodo mock environment"""
     # It takes forever to generate the virtualenvs. Let the developer set this
     # environment variable to reuse a previously-bootstrapped komodo root.
@@ -48,24 +35,24 @@ def komodo_root(tmp_path_factory, python36_path, python38_path):
     path = tmp_path_factory.mktemp("prog-res-komodo")
 
     # Install and configure pythons
-    _install(python36_path, path / "2030.01.00-py36", ["numpy==1.18.4"])
-    _install(python36_path, path / "2030.01.01-py36", ["numpy==1.19.1"])
+    _install(python38_path, path / "2030.01.00-py38", ["numpy==1.18.4"])
+    _install(python38_path, path / "2030.01.01-py38", ["numpy==1.19.1"])
     _install(python38_path, path / "2030.02.00-py38")
     _install(python38_path, path / "2030.03.00-py38-rhel9")
-    _install(python36_path, path / "bleeding-py36-rhel7")
+    _install(python38_path, path / "bleeding-py38-rhel7")
 
     for chain in (
-        ("2030.01", "2030.01-py3", "2030.01-py36", "2030.01.00-py36"),
+        ("2030.01", "2030.01-py3", "2030.01-py38", "2030.01.00-py38"),
         ("2030.02", "2030.02-py3", "2030.02-py38", "2030.02.00-py38"),
         ("2030.03", "2030.03-py3", "2030.03-py38", "2030.03.00-py38"),
-        # Stable points to py36, unspecified-rhel
-        ("stable", "stable-py3", "stable-py36", "2030.01-py36"),
-        # Testing points to py36, rhel7
-        ("testing", "testing-py3", "testing-py36", "2030.02-py36"),
+        # Stable points to py38, unspecified-rhel
+        ("stable", "stable-py3", "stable-py38", "2030.01-py38"),
+        # Testing points to py38, rhel7
+        ("testing", "testing-py3", "testing-py38", "2030.02-py38"),
         # Unstable refers to a future version of RHEL
         ("unstable", "unstable-py3", "unstable-py38", "2030.03-py38"),
-        # Bleeding points to py36, rhel7
-        ("bleeding", "bleeding-py3", "bleeding-py36"),
+        # Bleeding points to py38, rhel7
+        ("bleeding", "bleeding-py3", "bleeding-py38"),
     ):
         for src, dst in zip(chain[:-1], chain[1:]):
             (path / src).symlink_to(dst)
