@@ -33,7 +33,7 @@ def test_init_bash(komodo_root, tmp_path):
         "--root",
         str(komodo_root),
         "--release",
-        "2030.01.00-py36",
+        "2030.01.00-py38",
         str(tmp_path / "kenv"),
     )
 
@@ -54,7 +54,7 @@ def test_init_csh(komodo_root, tmp_path):
         "--root",
         str(komodo_root),
         "--release",
-        "2030.01.00-py36",
+        "2030.01.00-py38",
         str(tmp_path / "kenv"),
     )
 
@@ -75,7 +75,7 @@ def test_update(request, komodo_root, tmp_path):
         "--root",
         str(komodo_root),
         "--release",
-        "2030.01-py36",
+        "2030.01-py38",
         str(tmp_path / "kenv"),
     )
 
@@ -83,12 +83,12 @@ def test_update(request, komodo_root, tmp_path):
     check_output([str(tmp_path / "kenv/root/bin/komodoenv-update"), "--check"])
 
     # Update to 2030.01.01
-    (komodo_root / "2030.01-py36").unlink()
-    (komodo_root / "2030.01-py36").symlink_to("2030.01.01-py36")
+    (komodo_root / "2030.01-py38").unlink()
+    (komodo_root / "2030.01-py38").symlink_to("2030.01.01-py38")
 
     def revert():
-        (komodo_root / "2030.01-py36").unlink()
-        (komodo_root / "2030.01-py36").symlink_to("2030.01.00-py36")
+        (komodo_root / "2030.01-py38").unlink()
+        (komodo_root / "2030.01-py38").symlink_to("2030.01.00-py38")
 
     request.addfinalizer(revert)
 
