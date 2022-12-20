@@ -5,16 +5,16 @@ import komodoenv.__main__ as main
 @pytest.mark.parametrize(
     "expect,track_name,name",
     [
-        # Bleeding is py36, rhel7
-        ("bleeding-py36-rhel7", "bleeding-py36", "bleeding"),
-        ("bleeding-py36-rhel7", "bleeding-py36", "bleeding-py3"),
-        ("bleeding-py36-rhel7", "bleeding-py36", "bleeding-py36"),
-        # Stable is py36, unspecified rhel
-        ("2030.01.00-py36", "stable-py36", "stable"),
-        ("2030.01.00-py36", "stable-py36", "stable-py3"),
-        ("2030.01.00-py36", "stable-py36", "stable-py36"),
-        ("2030.01.00-py36", "stable-py36", "2030.01"),
-        ("2030.01.00-py36", "stable-py36", "2030.01.00-py36"),
+        # Bleeding is py38, rhel7
+        ("bleeding-py38-rhel7", "bleeding-py38", "bleeding"),
+        ("bleeding-py38-rhel7", "bleeding-py38", "bleeding-py3"),
+        ("bleeding-py38-rhel7", "bleeding-py38", "bleeding-py38"),
+        # Stable is py38, unspecified rhel
+        ("2030.01.00-py38", "stable-py38", "stable"),
+        ("2030.01.00-py38", "stable-py38", "stable-py3"),
+        ("2030.01.00-py38", "stable-py38", "stable-py38"),
+        ("2030.01.00-py38", "stable-py38", "2030.01"),
+        ("2030.01.00-py38", "stable-py38", "2030.01.00-py38"),
     ],
 )
 def test_resolve_simple(komodo_root, track_name, name, expect):
@@ -37,7 +37,7 @@ def test_resolve_simple(komodo_root, track_name, name, expect):
         "2030.03.00-py38",
         "2030.03.00-py38-rhel9",
         # Singular release
-        "2030.01.01-py36"
+        "2030.01.01-py38",
     ],
 )
 def test_resolve_fail(komodo_root, name):
@@ -51,26 +51,26 @@ def test_resolve_fail_singular(komodo_root):
     the user and exit.
     """
     with pytest.raises(SystemExit) as exc:
-        main.resolve_release(komodo_root, "2030.01.01-py36")
+        main.resolve_release(komodo_root, "2030.01.01-py38")
     assert "--no-update" in str(exc.value)
 
 
 @pytest.mark.parametrize(
     "expect,name",
     [
-        # Bleeding is py36, rhel7
-        ("bleeding-py36-rhel7", "bleeding"),
-        ("bleeding-py36-rhel7", "bleeding-py3"),
-        ("bleeding-py36-rhel7", "bleeding-py36"),
-        # Stable is py36, unspecified rhel
-        ("2030.01.00-py36", "stable"),
-        ("2030.01.00-py36", "stable-py3"),
-        ("2030.01.00-py36", "stable-py36"),
-        ("2030.01.00-py36", "2030.01"),
-        ("2030.01.00-py36", "2030.01.00-py36"),
+        # Bleeding is py38, rhel7
+        ("bleeding-py38-rhel7", "bleeding"),
+        ("bleeding-py38-rhel7", "bleeding-py3"),
+        ("bleeding-py38-rhel7", "bleeding-py38"),
+        # Stable is py38, unspecified rhel
+        ("2030.01.00-py38", "stable"),
+        ("2030.01.00-py38", "stable-py3"),
+        ("2030.01.00-py38", "stable-py38"),
+        ("2030.01.00-py38", "2030.01"),
+        ("2030.01.00-py38", "2030.01.00-py38"),
         # Singular release
-        ("2030.01.01-py36", "2030.01.01-py36"),
-    ]
+        ("2030.01.01-py38", "2030.01.01-py38"),
+    ],
 )
 def test_resolve_no_update(komodo_root, expect, name):
     release, tracked = main.resolve_release(komodo_root, name, no_update=True)
