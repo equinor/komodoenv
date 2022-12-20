@@ -22,7 +22,7 @@ jobs:
         python-version: 3.8
     - name: Install Ubuntu Packages
       run: |
-        sudo apt-get -y install tcsh python3-venv python3.8-venv
+        sudo apt-get -y install tcsh
     - name: Install Python Packages
       run: |
         python -m pip install --upgrade pip
