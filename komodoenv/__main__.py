@@ -11,7 +11,7 @@ from shutil import rmtree
 from pathlib import Path
 from komodoenv.creator import Creator
 from komodoenv.statfs import is_nfs
-from colors import red, yellow, strip_color
+from colors import blue, yellow, strip_color
 
 
 def get_release_maturity_text(release_path):
@@ -177,9 +177,11 @@ def parse_args(args):
 
 def main(args=None):
     texts = {
-        "beta": red(
+        "beta": blue(
             "Komodoenv is still in beta. Be aware that issues might occur and "
-            "recreating environments once in a while is necessary.\n"
+            "recreating environments once in a while is necessary.\n\n"
+            "For progress on stabilising komodoenv, see: "
+            "https://github.com/equinor/komodoenv/milestone/1\n"
         ),
         "nfs": yellow(
             "Warning: Komodoenv target directory is not located on an NFS "
