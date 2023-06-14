@@ -75,11 +75,6 @@ export LD_LIBRARY_PATH={komodo_prefix}/root/lib:{komodo_prefix}/root/lib64${{LD_
 export _PRE_KOMODO_PS1="${{PS1:-}}"
 export PS1="({komodoenv_release} + {komodo_release}) ${{PS1:-}}"
 
-local_script="{komodo_prefix}/local"
-if [ -e "$local_script" ]; then
-    source "$local_script"
-fi
-
 if [ -n "${{BASH:-}}" -o -n "${{ZSH_VERSION:-}}" ]; then
     hash -r
 fi
@@ -137,11 +132,6 @@ else
 endif
 
 setenv KOMODO_RELEASE {komodoenv_prefix}
-
-set local_script={komodo_prefix}/local.csh
-if ( -r $local_script) then
-    source $local_script
-endif
 
 # Could be in a non-interactive environment,
 # in which case, $prompt is undefined and we wouldn't
