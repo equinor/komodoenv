@@ -185,7 +185,7 @@ def main(args=None):
         ),
         "nfs": yellow(
             "Warning: Komodoenv target directory is not located on an NFS "
-            "filesystem. Be aware that multi-machine workloads via eg. LFS "
+            "filesystem. Be aware that multi-machine workloads via eg. LSF "
             "might not work correctly.\n"
         ),
     }
