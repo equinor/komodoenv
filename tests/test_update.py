@@ -163,4 +163,3 @@ def test_get_pkg_version_none():
     )
 
     assert ver is None
-

@@ -51,7 +51,9 @@ def distro_suffix():
     return f"-rhel{distro.major_version()}"
 
 
-def resolve_release(root: Path, name: str, no_update: bool = False) -> Tuple[Path, Path]:
+def resolve_release(
+    root: Path, name: str, no_update: bool = False
+) -> Tuple[Path, Path]:
     """Autodetect komodo release heuristically"""
     if not (root / name / "enable").is_file():
         sys.exit(f"'{root / name}' is not a valid komodo release")
@@ -103,8 +105,10 @@ def resolve_release(root: Path, name: str, no_update: bool = False) -> Tuple[Pat
             if symlink.name == actual_path.name:
                 return (symlink, track)
 
-    sys.exit("Could not automatically detect an appropriate Komodo release to track (one of: stable, testing, unstable, bleeding).\n"
-             "Use --no-update to make a komodoenv of a singular release.")
+    sys.exit(
+        "Could not automatically detect an appropriate Komodo release to track (one of: stable, testing, unstable, bleeding).\n"
+        "Use --no-update to make a komodoenv of a singular release."
+    )
 
 
 def parse_args(args):
@@ -158,7 +162,9 @@ def parse_args(args):
         args.release = Path(args.root) / args.release
 
     if not args.release or not args.track:
-        args.release, args.track = resolve_release(args.root, str(args.release), no_update=args.no_update)
+        args.release, args.track = resolve_release(
+            args.root, str(args.release), no_update=args.no_update
+        )
     args.track = Path(args.track)
     args.destination = Path(args.destination).absolute()
 

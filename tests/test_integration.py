@@ -1,4 +1,3 @@
-import os
 import sys
 import pytest
 from subprocess import Popen, PIPE, check_output, CalledProcessError
