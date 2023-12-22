@@ -233,12 +233,12 @@ def can_update(config: dict) -> bool:
     layout is identical, and can be safely updated with this script.
 
     """
-    srcpath = os.path.realpath(os.path.join(config["komodo-root"], config["tracked-release"]))
+    srcpath = os.path.realpath(
+        os.path.join(config["komodo-root"], config["tracked-release"])
+    )
     if not os.path.isdir(os.path.join(srcpath, "root")):
         srcpath += rhel_version_suffix()
-    version = get_pkg_version(
-        config, os.path.join(srcpath, "root")
-    )
+    version = get_pkg_version(config, os.path.join(srcpath, "root"))
     if "komodoenv-version" not in config or version is None:
         return False
 
