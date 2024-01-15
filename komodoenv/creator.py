@@ -67,7 +67,10 @@ class Creator:
         env = {"LD_LIBRARY_PATH": str(self.srcpath / "root" / "lib"), **os.environ}
         subprocess.check_output(
             [
-                str(self.srcpy.executable),
+                str(self.srcpy.executable)
+                + str(self.srcpy.version_info[0])
+                + "."
+                + str(self.srcpy.version_info[1]),
                 "-m",
                 "venv",
                 "--copies",
