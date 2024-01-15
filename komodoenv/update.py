@@ -10,22 +10,31 @@ import os
 import re
 import sys
 import shutil
+import platform
 from typing import List
 from argparse import ArgumentParser
 from textwrap import dedent
 
-
 try:
     from distro import id as distro_id, version_parts as distro_versions
 except ImportError:
-    # The 'distro' package isn't installed. Pretend we're on RHEL7.
+    # The 'distro' package isn't installed.
     #
-    # yum install python36-distro
     def distro_id():
         return "rhel"
 
-    def distro_versions():
-        return ("7", "0", "0")
+    if "el7" in platform.platform():
+
+        def distro_versions():
+            return ("7", "0", "0")
+
+    elif "el8" in platform.platform():
+
+        def distro_versions():
+            return ("8", "0", "0")
+
+    else:
+        sys.stderr.write("Warning: komodoenv is only compatible with RHEL7 or RHEL8")
 
 
 ENABLE_BASH = """\
