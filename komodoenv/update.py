@@ -7,28 +7,29 @@ alive and kicking. The reason for this is that we wish to use /usr/bin/python3
 to avoid any dependency on komodo during the update.
 """
 import os
-import re
-import sys
-import shutil
 import platform
-from typing import List
+import re
+import shutil
+import sys
 from argparse import ArgumentParser
 from textwrap import dedent
+from typing import List
 
 try:
-    from distro import id as distro_id, version_parts as distro_versions
+    from distro import id as distro_id
+    from distro import version_parts as distro_versions
 except ImportError:
     # The 'distro' package isn't installed.
     #
     def distro_id():
         return "rhel"
 
-    if "el7" in platform.platform():
+    if "el7" in platform.release():
 
         def distro_versions():
             return ("7", "0", "0")
 
-    elif "el8" in platform.platform():
+    elif "el8" in platform.release():
 
         def distro_versions():
             return ("8", "0", "0")

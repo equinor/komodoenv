@@ -1,9 +1,10 @@
-from komodoenv import update
-from textwrap import dedent
-from pkg_resources import get_distribution
-import time
 import os
 import sys
+import time
+from importlib.metadata import distribution
+from textwrap import dedent
+
+from komodoenv import update
 
 
 def test_rewrite_executable_python():
@@ -152,7 +153,7 @@ def test_get_pkg_version_exists():
         "pip",
     )
 
-    assert ver == get_distribution("pip").version
+    assert ver == distribution("pip").version
 
 
 def test_get_pkg_version_none():
