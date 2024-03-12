@@ -1,9 +1,15 @@
 import os
+import platform
 import re
-import pytest
-from typing import List, Optional
 from pathlib import Path
 from subprocess import check_output
+from typing import List, Optional
+
+import pytest
+
+
+def rhel_version():
+    return "8" if "el8" in platform.release() else "7"
 
 
 @pytest.fixture(scope="session")
@@ -39,7 +45,7 @@ def komodo_root(tmp_path_factory, python38_path):
     _install(python38_path, path / "2030.01.01-py38", ["numpy==1.19.1"])
     _install(python38_path, path / "2030.02.00-py38")
     _install(python38_path, path / "2030.03.00-py38-rhel9")
-    _install(python38_path, path / "bleeding-py38-rhel7")
+    _install(python38_path, path / f"bleeding-py38-rhel{rhel_version()}")
 
     for chain in (
         ("2030.01", "2030.01-py3", "2030.01-py38", "2030.01.00-py38"),

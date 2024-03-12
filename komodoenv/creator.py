@@ -1,13 +1,14 @@
-from pathlib import Path
-import subprocess
 import os
-import distro
+import subprocess
+from importlib.metadata import distribution
+from pathlib import Path
 from textwrap import dedent
-from colors import green, strip_color
-from pkg_resources import get_distribution
 
-from komodoenv.python import Python
+import distro
+from colors import green, strip_color
+
 from komodoenv.bundle import get_bundled_wheel
+from komodoenv.python import Python
 
 
 class _OpenChmod:
@@ -120,7 +121,7 @@ class Creator:
                 tracked-release = {self.trackpath.name}
                 mtime-release = 0
                 python-version = {self.srcpy.version_info[0]}.{self.srcpy.version_info[1]}
-                komodoenv-version = {get_distribution('komodoenv').version}
+                komodoenv-version = {distribution('komodoenv').version}
                 komodo-root = {self.komodo_root}
                 linux-dist = {distro.id() + distro.version_parts()[0]}
                 """

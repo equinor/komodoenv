@@ -1,6 +1,8 @@
 import sys
+from subprocess import PIPE, CalledProcessError, Popen, check_output
+
 import pytest
-from subprocess import Popen, PIPE, check_output, CalledProcessError
+
 from komodoenv.__main__ import main as _main
 
 

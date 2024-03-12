@@ -1,17 +1,18 @@
-from __future__ import print_function
-import os
-import sys
-import re
 import argparse
 import logging
-import distro
+import os
+import re
 import subprocess
-from typing import Tuple
-from shutil import rmtree
+import sys
 from pathlib import Path
+from shutil import rmtree
+from typing import Tuple
+
+import distro
+from colors import blue, strip_color, yellow
+
 from komodoenv.creator import Creator
 from komodoenv.statfs import is_nfs
-from colors import blue, yellow, strip_color
 
 
 def get_release_maturity_text(release_path):
