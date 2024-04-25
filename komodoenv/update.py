@@ -197,10 +197,11 @@ def rhel_version_suffix() -> str:
     Return the current running RHEL version as "-rhelX" where X is the major
     version. "" if not on RHEL.
     """
+
     return "-" + distro_id() + distro_versions()[0]
 
 
-def check_same_distro(config: dict):
+def check_same_distro(config: dict) -> bool:
     """Python might not run properly on a different distro than the one that
     komodoenv was first generated for. Returns True if the distro in the config
     matches ours, False otherwise.
@@ -209,13 +210,14 @@ def check_same_distro(config: dict):
     confdist = config.get("linux-dist", "")
     thisdist = distro_id() + distro_versions()[0]
     if confdist == thisdist:
-        return
+        return True
 
     sys.stderr.write(
-        "Warning: Current distribution '{current}' doesn't match the one that "
-        "was used to generate this environment '{config}'. You might need to "
-        "recreate this komodoenv\n".format(current=thisdist, config=confdist)
+        f"Warning: Current distribution '{thisdist}' doesn't match the one that "
+        f"was used to generate this environment '{confdist}'. You might need to "
+        "recreate this komodoenv\n"
     )
+    return False
 
 
 def get_pkg_version(
@@ -400,11 +402,14 @@ def main(args: List[str] = None):
     args = parse_args(args)
 
     config = read_config()
-    current = current_track(config)
-    if not should_update(config, current):
+
+    if not check_same_distro(config):
         return
 
-    check_same_distro(config)
+    current = current_track(config)
+
+    if not should_update(config, current):
+        return
 
     if args.check and not can_update(config):
         sys.exit(
