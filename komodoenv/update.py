@@ -184,7 +184,9 @@ def read_config() -> dict:
             config[key] = val
 
     if "komodo-root" not in config:
-        config["komodo-root"] = "/prog/res/komodo"
+        config["komodo-root"] = (
+            "prog/komodo" if os.path.isdir("/prog/komodo") else "/prog/res/komodo"
+        )
 
     return config
 
