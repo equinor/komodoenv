@@ -1,9 +1,8 @@
-import os
 import json
-
-from subprocess import Popen, PIPE
-from pathlib import Path
+import os
 from enum import Enum
+from pathlib import Path
+from subprocess import PIPE, Popen
 
 
 class PythonType(Enum):

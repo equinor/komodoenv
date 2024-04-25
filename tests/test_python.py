@@ -1,5 +1,6 @@
 import sys
 from textwrap import dedent
+
 from komodoenv.python import Python, PythonType
 
 
