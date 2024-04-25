@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 BUNDLES = {
     wheel.name.split("-")[0]: wheel for wheel in Path(__file__).parent.glob("*.whl")
 }

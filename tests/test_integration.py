@@ -2,7 +2,6 @@ import sys
 from subprocess import PIPE, CalledProcessError, Popen, check_output
 
 import pytest
-
 from komodoenv.__main__ import main as _main
 
 
@@ -43,9 +42,7 @@ def test_init_bash(komodo_root, tmp_path):
 
     [[ $(which python) == "{kmd}/root/bin/python" ]]
     [[ $(python -c "import numpy;print(numpy.__version__)") == "1.18.4" ]]
-    """.format(
-        kmd=tmp_path / "kenv"
-    )
+    """.format(kmd=tmp_path / "kenv")
 
     assert bash(script) == 0
 
@@ -64,9 +61,7 @@ def test_init_csh(komodo_root, tmp_path):
 
     test `which python` = "{kmd}/root/bin/python" || exit 1
     test `python -c "import numpy;print(numpy.__version__)"` || exit 2
-    """.format(
-        kmd=tmp_path / "kenv"
-    )
+    """.format(kmd=tmp_path / "kenv")
 
     assert csh(script) == 0
 
@@ -104,9 +99,7 @@ def test_update(request, komodo_root, tmp_path):
     set -e
 
     komodoenv-update
-    """.format(
-        kmd=tmp_path / "kenv"
-    )
+    """.format(kmd=tmp_path / "kenv")
     assert bash(script) == 0
 
     # Check that our numpy is updated
@@ -115,9 +108,7 @@ def test_update(request, komodo_root, tmp_path):
 
     [[ $(which python) == "{kmd}/root/bin/python" ]]
     [[ $(python -c "import numpy;print(numpy.__version__)") == "1.19.1" ]]
-    """.format(
-        kmd=tmp_path / "kenv"
-    )
+    """.format(kmd=tmp_path / "kenv")
     assert bash(script) == 0
 
 

@@ -1,14 +1,13 @@
 import sys
-from pathlib import Path
 from ctypes import (
     CDLL,
     Structure,
+    byref,
     c_int64,
     c_uint64,
-    byref,
     create_string_buffer,
 )
-
+from pathlib import Path
 
 # From /usr/include/linux/magic.h
 _TMPFS_MAGIC = 0x01021994

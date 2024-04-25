@@ -1,7 +1,8 @@
 import os
 import sys
-from setuptools import setup
 from subprocess import check_output
+
+from setuptools import setup
 
 
 def download_bundled_wheels() -> None:

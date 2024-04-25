@@ -19,7 +19,7 @@ class _OpenChmod:
         self.io = None
 
     def __enter__(self):
-        self.io = open(self.path, self.open_mode)
+        self.io = open(self.path, self.open_mode)  # noqa: SIM115
         return self.io
 
     def __exit__(self, type, value, traceback):
@@ -63,7 +63,7 @@ class Creator:
         (self.dstpath / path).unlink()
 
     def venv(self):
-        self.print_action("venv", "using {}".format(self.srcpy.executable))
+        self.print_action("venv", f"using {self.srcpy.executable}")
 
         env = {"LD_LIBRARY_PATH": str(self.srcpath / "root" / "lib"), **os.environ}
         subprocess.check_output(
@@ -138,11 +138,10 @@ class Creator:
             print("\n".join(python_paths), file=f)
 
         # Create & run komodo-update
-        with open(Path(__file__).parent / "update.py") as inf:
-            with self.create_file(
-                Path("root/bin/komodoenv-update"), file_mode=0o755
-            ) as outf:
-                outf.write(inf.read())
+        with open(Path(__file__).parent / "update.py") as inf, self.create_file(
+            Path("root/bin/komodoenv-update"), file_mode=0o755
+        ) as outf:
+            outf.write(inf.read())
         self.run("root/bin/komodoenv-update")
         self.pip_install("setuptools")
         self.pip_install("wheel")

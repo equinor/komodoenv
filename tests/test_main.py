@@ -1,6 +1,6 @@
+import komodoenv.__main__ as main
 import pytest
 
-import komodoenv.__main__ as main
 from tests.conftest import rhel_version
 
 

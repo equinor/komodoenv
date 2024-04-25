@@ -1,2 +1,13 @@
 [build-system]
 requires = ["setuptools>=30.3.0", "wheel", "setuptools_scm", "pip"]
+
+[tool.ruff]
+src = ["komodoenv"]
+line-length = 88
+[tool.ruff.lint]
+select = [
+  "W",   # pycodestyle
+  "I",   # isort
+  "B",   # flake-8-bugbear
+  "SIM", # flake-8-simplify
+]

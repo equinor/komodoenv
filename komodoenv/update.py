@@ -6,6 +6,7 @@ Note: This script must be kept compatible with Python 3.6 as long as RHEL7 is
 alive and kicking. The reason for this is that we wish to use /usr/bin/python3
 to avoid any dependency on komodo during the update.
 """
+
 import os
 import platform
 import re
@@ -418,9 +419,7 @@ def main(args: List[str] = None):
 
         \tkomodoenv-update
 
-        """.format(
-                    rel=os.path.basename(current["current-release"])
-                )
+        """.format(rel=os.path.basename(current["current-release"]))
             )
         )
 

@@ -204,8 +204,7 @@ def main(args=None):
     if args.destination.is_dir() and args.force:
         rmtree(str(args.destination), ignore_errors=True)
     elif args.destination.is_dir():
-        sys.exit("Destination directory already exists: {}".format(args.destination))
-        sys.exit(1)
+        sys.exit(f"Destination directory already exists: {args.destination}")
 
     use_color = args.force_color or (sys.stdout.isatty() and sys.stderr.isatty())
     release_text = get_release_maturity_text(args.track)
