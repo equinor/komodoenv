@@ -13,6 +13,7 @@ import re
 import shutil
 import sys
 from argparse import ArgumentParser
+from pathlib import Path
 from textwrap import dedent
 from typing import List
 
@@ -170,7 +171,7 @@ endif
 
 def read_config() -> dict:
     with open(
-        os.path.join(os.path.dirname(__file__), "..", "..", "komodoenv.conf")
+        Path(__file__).parent / ".." / ".." / "komodoenv.conf", encoding="utf-8"
     ) as f:
         lines = f.readlines()
     config = {}
@@ -186,7 +187,7 @@ def read_config() -> dict:
 
     if "komodo-root" not in config:
         config["komodo-root"] = (
-            "prog/komodo" if os.path.isdir("/prog/komodo") else "/prog/res/komodo"
+            "prog/komodo" if Path("/prog/komodo").is_dir() else "/prog/res/komodo"
         )
 
     return config
@@ -221,21 +222,19 @@ def check_same_distro(config: dict) -> bool:
 
 
 def get_pkg_version(
-    config: dict, srcpath: str, package: str = "komodoenv"
+    config: dict, srcpath: Path, package: str = "komodoenv"
 ) -> List[str]:
     """Locate `package`'s version in the current komodo distribution. This format is
     defined in PEP 376 "Database of Installed Python Distributions".
 
     Returns None if package wasn't found.
     """
-    pkgdir = os.path.join(
-        srcpath, "lib", "python" + config["python-version"], "site-packages"
-    )
-    pattern = re.compile("^{}-(.+).dist-info".format(package))
+    pkgdir = srcpath / "lib" / ("python" + config["python-version"]) / "site-packages"
+    pattern = re.compile(f"^{package}-(.+).dist-info")
 
     matches = []
-    for name in os.listdir(pkgdir):
-        match = pattern.match(name)
+    for entry in pkgdir.iterdir():
+        match = pattern.match(entry.name)
         if match is not None:
             matches.append(match[1])
     if len(matches) > 0:
@@ -248,12 +247,10 @@ def can_update(config: dict) -> bool:
     layout is identical, and can be safely updated with this script.
 
     """
-    srcpath = os.path.realpath(
-        os.path.join(config["komodo-root"], config["tracked-release"])
-    )
-    if not os.path.isdir(os.path.join(srcpath, "root")):
-        srcpath += rhel_version_suffix()
-    version = get_pkg_version(config, os.path.join(srcpath, "root"))
+    srcpath = (Path(config["komodo-root"]) / config["tracked-release"]).resolve()
+    if not (srcpath / "root").is_dir():
+        srcpath = Path(str(srcpath) + rhel_version_suffix())
+    version = get_pkg_version(config, srcpath / "root")
     if "komodoenv-version" not in config or version is None:
         return False
 
@@ -265,21 +262,21 @@ def can_update(config: dict) -> bool:
 
 def write_config(config: dict):
     with open(
-        os.path.join(os.path.dirname(__file__), "..", "..", "komodoenv.conf"), "w"
+        Path(__file__).parent / ".." / ".." / "komodoenv.conf", "w", encoding="utf-8"
     ) as f:
         for key, val in config.items():
             f.write(f"{key} = {val}\n")
 
 
 def current_track(config: dict) -> dict:
-    path = os.path.join(config["komodo-root"], config["tracked-release"])
+    path = Path(config["komodo-root"]) / config["tracked-release"]
 
-    rp = os.path.realpath(path)
-    st = os.stat(path)
+    rp = path.resolve()
+    st = path.stat()
 
     config = {
         "tracked-release": config["tracked-release"],
-        "current-release": os.path.basename(rp),
+        "current-release": rp.name,
         "mtime-release": str(st.st_mtime),
     }
 
@@ -293,26 +290,26 @@ def should_update(config: dict, current: dict) -> bool:
     )
 
 
-def enable_script(fmt: str, komodo_prefix: str, komodoenv_prefix: str):
+def enable_script(fmt: str, komodo_prefix: Path, komodoenv_prefix: Path):
     return fmt.format(
-        komodo_prefix=komodo_prefix,
-        komodo_release=os.path.basename(komodo_prefix),
-        komodoenv_prefix=komodoenv_prefix,
-        komodoenv_release=os.path.basename(komodoenv_prefix),
+        komodo_prefix=str(komodo_prefix),
+        komodo_release=komodo_prefix.name,
+        komodoenv_prefix=str(komodoenv_prefix),
+        komodoenv_release=komodoenv_prefix.name,
     )
 
 
-def update_enable_script(komodo_prefix: str, komodoenv_prefix: str):
-    with open(os.path.join(komodoenv_prefix, "enable"), "w") as f:
+def update_enable_script(komodo_prefix: Path, komodoenv_prefix: Path):
+    with open(komodoenv_prefix / "enable", "w", encoding="utf-8") as f:
         f.write(enable_script(ENABLE_BASH, komodo_prefix, komodoenv_prefix))
-    with open(os.path.join(komodoenv_prefix, "enable.csh"), "w") as f:
+    with open(komodoenv_prefix / "enable.csh", "w", encoding="utf-8") as f:
         f.write(enable_script(ENABLE_CSH, komodo_prefix, komodoenv_prefix))
 
 
-def rewrite_executable(path: str, python: str, text: bytes):
-    path = os.path.realpath(path)
-    root = os.path.realpath(os.path.join(path, "..", ".."))
-    libs = os.pathsep.join((os.path.join(root, "lib"), os.path.join(root, "lib64")))
+def rewrite_executable(path: Path, python: str, text: bytes):
+    path = path.resolve()
+    root = (path / ".." / "..").resolve()
+    libs = os.pathsep.join([str(root / "lib"), str(root / "lib64")])
 
     newline_pos = text.find(b"\n")
     if (
@@ -333,49 +330,49 @@ def rewrite_executable(path: str, python: str, text: bytes):
     ).encode("utf8")
 
 
-def update_bins(srcpath: str, dstpath: str):
-    python = os.path.join(dstpath, "root", "bin", "python")
-    shimdir = os.path.join(dstpath, "root", "shims")
-    if os.path.isdir(shimdir):
+def update_bins(srcpath: Path, dstpath: Path):
+    python = dstpath / "root" / "bin" / "python"
+    shimdir = dstpath / "root" / "shims"
+    if shimdir.is_dir():
         shutil.rmtree(shimdir)
 
     os.mkdir(shimdir)
-    for name in os.listdir(os.path.join(srcpath, "root", "bin")):
-        if os.path.isfile(os.path.join(dstpath, "root", "bin", name)):
+    for entry in (srcpath / "root" / "bin").iterdir():
+        if (dstpath / "root" / "bin" / entry.name).is_file():
             continue
 
-        shimpath = os.path.join(dstpath, "root", "shims", name)
-        path = os.path.join(srcpath, "root", "libexec", name)
-        if not os.path.isfile(path):
-            path = os.path.join(srcpath, "root", "bin", name)
-        if not os.path.isfile(path):  # if folder, ignore
+        shimpath = dstpath / "root" / "shims" / entry.name
+        path = srcpath / "root" / "libexec" / entry.name
+        if not path.is_file():
+            path = srcpath / "root" / "bin" / entry.name
+        if not path.is_file():  # if folder, ignore
             continue
 
         with open(path, "rb") as f:
             text = f.read()
         with open(shimpath, "wb") as f:
-            f.write(rewrite_executable(path, python, text))
+            f.write(rewrite_executable(path, str(python), text))
         os.chmod(shimpath, 0o755)
 
 
-def create_pth(config: dict, srcpath: str, dstpath: str):
-    path = os.path.join(
-        dstpath,
-        "root",
-        "lib",
-        "python" + config["python-version"],
-        "site-packages",
-        "_komodo.pth",
+def create_pth(config: dict, srcpath: Path, dstpath: Path):
+    path = (
+        dstpath
+        / "root"
+        / "lib"
+        / ("python" + config["python-version"])
+        / "site-packages"
+        / "_komodo.pth"
     )
     with open(path, "w", encoding="utf-8") as f:
         for lib in "lib64", "lib":
             f.write(
-                os.path.join(
-                    srcpath,
-                    "root",
-                    lib,
-                    "python" + config["python-version"],
-                    "site-packages",
+                str(
+                    srcpath
+                    / "root"
+                    / lib
+                    / ("python" + config["python-version"])
+                    / "site-packages"
                 )
                 + "\n"
             )
@@ -429,11 +426,11 @@ def main(args: List[str] = None):
     config.update(current)
     write_config(config)
 
-    srcpath = os.path.join(config["komodo-root"], config["current-release"])
-    if not os.path.isdir(os.path.join(srcpath, "root")):
-        srcpath += rhel_version_suffix()
+    srcpath = Path(config["komodo-root"]) / config["current-release"]
+    if not (srcpath / "root").is_dir():
+        srcpath = Path(str(srcpath) + rhel_version_suffix())
 
-    dstpath = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    dstpath = (Path(__file__).parent / ".." / "..").resolve()
     update_bins(srcpath, dstpath)
     update_enable_script(srcpath, dstpath)
     create_pth(config, srcpath, dstpath)

@@ -1,7 +1,7 @@
-import os
 import sys
 import time
 from importlib.metadata import distribution
+from pathlib import Path
 from textwrap import dedent
 
 from komodoenv import update
@@ -27,7 +27,7 @@ def test_rewrite_executable_python():
     lines[0] = "#!" + python
 
     actual = update.rewrite_executable(
-        "/prog/res/komodo/bin/pip", python, pip.encode("utf-8")
+        Path("/prog/res/komodo/bin/pip"), python, pip.encode("utf-8")
     )
     assert "\n".join(lines).encode("utf-8") == actual
 
@@ -46,7 +46,7 @@ def test_rewrite_executable_binary():
     )
 
     assert expect.encode("utf-8") == update.rewrite_executable(
-        "/prog/res/komodo/bin/bash", python, sh
+        Path("/prog/res/komodo/bin/bash"), python, sh
     )
 
 
@@ -68,7 +68,7 @@ def test_rewrite_executable_other_shebang():
     )
 
     assert expect.encode("utf-8") == update.rewrite_executable(
-        "/prog/res/komodo/bin/gem", python, gem.encode("utf-8")
+        Path("/prog/res/komodo/bin/gem"), python, gem.encode("utf-8")
     )
 
 
@@ -149,7 +149,7 @@ def test_should_update_symlink(tmpdir):
 def test_get_pkg_version_exists():
     ver = update.get_pkg_version(
         {"python-version": "{}.{}".format(*sys.version_info)},
-        os.path.abspath(os.path.join(sys.executable, "..", "..")),
+        (Path(sys.executable) / ".." / "..").resolve(),
         "pip",
     )
 
@@ -159,7 +159,7 @@ def test_get_pkg_version_exists():
 def test_get_pkg_version_none():
     ver = update.get_pkg_version(
         {"python-version": "{}.{}".format(*sys.version_info)},
-        os.path.abspath(os.path.join(sys.executable, "..", "..")),
+        (Path(sys.executable) / ".." / "..").resolve(),
         "this-package-doesnt-exist",
     )
 
