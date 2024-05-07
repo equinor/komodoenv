@@ -62,7 +62,7 @@ def resolve_release(
     env = os.environ.copy()
     if "BASH_ENV" in env:
         del env["BASH_ENV"]
-    lines = (
+    python_info = (
         subprocess.check_output(
             [
                 "/bin/bash",
@@ -75,20 +75,22 @@ def resolve_release(
         .splitlines(keepends=False)
     )
 
-    assert len(lines) == 2
-    actual_path = Path(lines[0]).parent.parent.parent  # <path>/root/bin/python
+    if len(python_info) != 2:
+        raise RuntimeError(f"Expected exactly 2 lines, but got {len(python_info)}")
+    actual_path = Path(python_info[0]).parents[2]  # <path>/root/bin/python
     if no_update:
         return (actual_path, actual_path)
 
-    match = re.search(r"Python (\d).(\d+)", lines[1])
+    match = re.search(r"Python (\d).(\d+)", python_info[1])
     if match is None:
         sys.exit(f"An error occurred while detecting the version of Python of '{root}'")
     major, minor = match.groups()
     pyver = "-py" + major + minor
 
-    m = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", name)
-    assert m is not None
-    name = m[1] + pyver
+    base_name = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", name)
+    if base_name is None:
+        raise ValueError("Could not find the release.")
+    name = base_name[1] + pyver
 
     print(f"Looking for {name}")
 
@@ -155,7 +157,8 @@ def parse_args(args):
     args = ap.parse_args(args)
 
     args.root = Path(args.root)
-    assert args.root.is_dir()
+    if not args.root.is_dir():
+        raise ValueError("The given root is not a directory.")
 
     if "/" in args.release:
         args.release = Path(args.release)

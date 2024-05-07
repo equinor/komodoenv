@@ -1,5 +1,6 @@
 import os
 import subprocess
+from contextlib import contextmanager
 from importlib.metadata import distribution
 from pathlib import Path
 from textwrap import dedent
@@ -11,20 +12,11 @@ from komodoenv.bundle import get_bundled_wheel
 from komodoenv.python import Python
 
 
-class _OpenChmod:
-    def __init__(self, path, open_mode="w", file_mode=0o644):
-        self.path = path
-        self.open_mode = open_mode
-        self.file_mode = file_mode
-        self.io = None
-
-    def __enter__(self):
-        self.io = open(self.path, self.open_mode)  # noqa: SIM115
-        return self.io
-
-    def __exit__(self, type, value, traceback):
-        self.path.chmod(self.file_mode)
-        self.io.close()
+@contextmanager
+def open_chmod(path: Path, mode: str = "w", file_mode=0o644):
+    with open(path, mode, encoding="utf-8") as file:
+        yield file
+    path.chmod(file_mode)
 
 
 class Creator:
@@ -53,7 +45,7 @@ class Creator:
 
     def create_file(self, path, file_mode=0o644):
         self.print_action("create", path)
-        return _OpenChmod(self.dstpath / path, file_mode=file_mode)
+        return open_chmod(self.dstpath / path, file_mode=file_mode)
 
     def remove_file(self, path):
         if not (self.dstpath / path).is_file():
@@ -138,7 +130,9 @@ class Creator:
             print("\n".join(python_paths), file=f)
 
         # Create & run komodo-update
-        with open(Path(__file__).parent / "update.py") as inf, self.create_file(
+        with open(
+            Path(__file__).parent / "update.py", encoding="utf-8"
+        ) as inf, self.create_file(
             Path("root/bin/komodoenv-update"), file_mode=0o755
         ) as outf:
             outf.write(inf.read())
@@ -156,11 +150,11 @@ class Creator:
 
         print(
             dedent(
-                """\
+                f"""\
 
         Komodoenv has successfully been generated. You can now pip-install software.
 
             $ source {enable_script}
         """
-            ).format(enable_script=enable_script)
+            )
         )
