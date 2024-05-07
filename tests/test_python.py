@@ -31,7 +31,7 @@ def test_ld_library_path():
     base = "/does/not/exist"
     py = Python(sys.executable, base)
 
-    expect = "{0}/lib64:{0}/lib\n".format(base).encode("utf-8")
+    expect = f"{base}/lib64:{base}/lib\n".encode("utf-8")  # noqa UP012
     actual = py.call(script=b"import os;print(os.environ['LD_LIBRARY_PATH'])")
     assert expect == actual
 

@@ -268,7 +268,7 @@ def write_config(config: dict):
         os.path.join(os.path.dirname(__file__), "..", "..", "komodoenv.conf"), "w"
     ) as f:
         for key, val in config.items():
-            f.write("{key} = {val}\n".format(key=key, val=val))
+            f.write(f"{key} = {val}\n")
 
 
 def current_track(config: dict) -> dict:
@@ -288,10 +288,8 @@ def current_track(config: dict) -> dict:
 
 def should_update(config: dict, current: dict) -> bool:
     return any(
-        [
-            config[x] != current[x]
-            for x in ("tracked-release", "current-release", "mtime-release")
-        ]
+        config[x] != current[x]
+        for x in ("tracked-release", "current-release", "mtime-release")
     )
 
 
@@ -326,12 +324,12 @@ def rewrite_executable(path: str, python: str, text: bytes):
 
     return (
         dedent(
-            """\
+            f"""\
     #!/bin/bash
     export LD_LIBRARY_PATH={libs}${{LD_LIBRARY_PATH:+:${{LD_LIBRARY_PATH}}}}
-    exec -a "$0" "{prog}" "$@"
+    exec -a "$0" "{path!s}" "$@"
     """
-        ).format(libs=libs, prog=path)
+        )
     ).encode("utf8")
 
 
@@ -369,7 +367,7 @@ def create_pth(config: dict, srcpath: str, dstpath: str):
         "site-packages",
         "_komodo.pth",
     )
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         for lib in "lib64", "lib":
             f.write(
                 os.path.join(
@@ -419,12 +417,12 @@ def main(args: List[str] = None):
     elif args.check:
         sys.exit(
             dedent(
-                """\
-        Warning: Your komodoenv is out of date. To update to the latest komodo release ({rel}), run the following command:
+                f"""\
+        Warning: Your komodoenv is out of date. To update to the latest komodo release ({Path(current["current-release"]).name}), run the following command:
 
         \tkomodoenv-update
 
-        """.format(rel=os.path.basename(current["current-release"]))
+        """
             )
         )
 

@@ -12,7 +12,7 @@ class PythonType(Enum):
     VENV = 3
 
 
-class Python(object):
+class Python:
     def __init__(self, executable, komodo_prefix=None):
         """"""
         self.executable = Path(executable)
@@ -37,7 +37,9 @@ class Python(object):
         """Detects what type of Python installation this is"""
         # Get python version_info
         script = b"import sys,json;print(json.dumps(sys.version_info[:]))"
-        env = {"LD_LIBRARY_PATH": "{0}/lib64:{0}/lib".format(self.komodo_prefix)}
+        env = {
+            "LD_LIBRARY_PATH": f"{self.komodo_prefix}/lib64:{self.komodo_prefix}/lib"
+        }
         self.version_info = tuple(json.loads(self.call(script=script, env=env)))
 
         # Get python sys.path
@@ -73,14 +75,12 @@ class Python(object):
             env = {}
         if script is not None:
             # Prepend '-' to tell Python to read from stdin
-            args = ["-"] + args
+            args = ["-", *args]
 
-        env["PATH"] = "{}:{}".format(
-            self.executable.parent.absolute(), os.environ["PATH"]
-        )
-        env["LD_LIBRARY_PATH"] = "{0}/lib64:{0}/lib".format(self.komodo_prefix)
+        env["PATH"] = f'{self.executable.parent.absolute()}:{os.environ["PATH"]}'
+        env["LD_LIBRARY_PATH"] = f"{self.komodo_prefix}/lib64:{self.komodo_prefix}/lib"
 
-        args = [self.executable] + args
+        args = [self.executable, *args]
         proc = Popen(map(str, args), stdin=PIPE, stdout=PIPE, env=env)
         stdout, _ = proc.communicate(script)
 

@@ -10,7 +10,7 @@ from komodoenv import update
 def test_rewrite_executable_python():
     pip = dedent(
         """\
-    #!/usr/bin/python2
+    #!/usr/bin/python3
     # EASY-INSTALL-ENTRY-SCRIPT: 'pip==8.1.2','console_scripts','pip'
     __requires__ = 'pip==8.1.2'
     import sys
