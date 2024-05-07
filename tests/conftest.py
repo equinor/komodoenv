@@ -24,7 +24,7 @@ def python38_path():
     Ubuntu 18.04 : apt-get install python3-venv python3.8-{dev,venv}
     """
     for exe in "/usr/bin/python3.8", "/opt/rh/rh-python38/root/bin/python3.8":
-        if os.path.isfile(exe):
+        if Path(exe).is_file():
             return exe
     else:
         raise RuntimeError("Could not locate python3.8")
