@@ -1,13 +1,13 @@
-import os
 import sys
+from pathlib import Path
 from subprocess import check_output
 
 from setuptools import setup
 
 
 def download_bundled_wheels() -> None:
-    dest = os.path.join(os.path.dirname(__file__), "komodoenv", "bundle")
-    print(f"Downloading wheels to {os.path.realpath(dest)}")
+    dest = Path(__file__).parent / "komodoenv" / "bundle"
+    print(f"Downloading wheels to {dest.resolve()}")
     check_output(
         [
             sys.executable,
