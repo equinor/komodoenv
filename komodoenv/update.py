@@ -11,6 +11,7 @@ import os
 import platform
 import re
 import shutil
+import subprocess
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
@@ -221,6 +222,38 @@ def check_same_distro(config: dict) -> bool:
     return False
 
 
+def copy_jupyter_dirs(config: dict) -> None:
+    """
+    Notebook 7 does not play well with komodoenv, and so we need to copy the
+    data and config dirs from the komodo release.
+    """
+    srcpath = Path(config["komodo-root"]) / config["current-release"] / "root"
+    if not srcpath.is_dir():
+        srcpath = Path(str(srcpath) + rhel_version_suffix()) / "root"
+    dstpath = Path(__file__).resolve().parents[1]
+    notebook_version = get_pkg_version(config, srcpath, "notebook")
+    if not (notebook_version and int(notebook_version[0]) >= 7):
+        return
+    src_share = srcpath / "share" / "jupyter"
+    src_etc = srcpath / "etc" / "jupyter"
+    dst_share = dstpath / "share"
+    dst_etc = dstpath / "etc"
+    if not (src_share.is_dir() or src_etc.is_dir()):
+        return
+    dst_etc.mkdir(exist_ok=True)
+    dst_share.mkdir(exist_ok=True)
+    try:
+        subprocess.run(
+            ["rsync", "-a", "--ignore-existing", src_share, dst_share], check=True
+        )
+        subprocess.run(
+            ["rsync", "-a", "--ignore-existing", src_etc, dst_etc], check=True
+        )
+    except subprocess.CalledProcessError as err:
+        print(f"An error occurred when fixing up jupyter environment: \n{err}")
+        print("Jupyter may not work as intended in the komodoenv.")
+
+
 def get_pkg_version(
     config: dict, srcpath: Path, package: str = "komodoenv"
 ) -> List[str]:
@@ -401,6 +434,8 @@ def main(args: List[str] = None):
     if not check_same_distro(config):
         return
 
+    copy_jupyter_dirs(config)
+
     current = current_track(config)
 
     if not should_update(config, current):
@@ -434,6 +469,8 @@ def main(args: List[str] = None):
     update_bins(srcpath, dstpath)
     update_enable_script(srcpath, dstpath)
     create_pth(config, srcpath, dstpath)
+    # we run copy_jupyter_dirs before and after updating to make sure it is always run
+    copy_jupyter_dirs(config)
 
 
 if __name__ == "__main__":
