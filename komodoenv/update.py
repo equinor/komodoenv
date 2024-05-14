@@ -171,9 +171,7 @@ endif
 
 
 def read_config() -> dict:
-    with open(
-        Path(__file__).parent / ".." / ".." / "komodoenv.conf", encoding="utf-8"
-    ) as f:
+    with open(Path(__file__).parents[2] / "komodoenv.conf", encoding="utf-8") as f:
         lines = f.readlines()
     config = {}
     for line in lines:
@@ -272,6 +270,7 @@ def get_pkg_version(
             matches.append(match[1])
     if len(matches) > 0:
         return max(matches)
+    return None
 
 
 def can_update(config: dict) -> bool:
@@ -294,9 +293,7 @@ def can_update(config: dict) -> bool:
 
 
 def write_config(config: dict):
-    with open(
-        Path(__file__).parent / ".." / ".." / "komodoenv.conf", "w", encoding="utf-8"
-    ) as f:
+    with open(Path(__file__).parents[2] / "komodoenv.conf", "w", encoding="utf-8") as f:
         for key, val in config.items():
             f.write(f"{key} = {val}\n")
 
@@ -341,7 +338,7 @@ def update_enable_script(komodo_prefix: Path, komodoenv_prefix: Path):
 
 def rewrite_executable(path: Path, python: str, text: bytes):
     path = path.resolve()
-    root = (path / ".." / "..").resolve()
+    root = path.parents[1]
     libs = os.pathsep.join([str(root / "lib"), str(root / "lib64")])
 
     newline_pos = text.find(b"\n")
@@ -369,7 +366,7 @@ def update_bins(srcpath: Path, dstpath: Path):
     if shimdir.is_dir():
         shutil.rmtree(shimdir)
 
-    os.mkdir(shimdir)
+    shimdir.mkdir()
     for entry in (srcpath / "root" / "bin").iterdir():
         if (dstpath / "root" / "bin" / entry.name).is_file():
             continue
@@ -385,7 +382,7 @@ def update_bins(srcpath: Path, dstpath: Path):
             text = f.read()
         with open(shimpath, "wb") as f:
             f.write(rewrite_executable(path, str(python), text))
-        os.chmod(shimpath, 0o755)
+        shimpath.chmod(0o755)
 
 
 def create_pth(config: dict, srcpath: Path, dstpath: Path):
@@ -465,7 +462,7 @@ def main(args: List[str] = None):
     if not (srcpath / "root").is_dir():
         srcpath = Path(str(srcpath) + rhel_version_suffix())
 
-    dstpath = (Path(__file__).parent / ".." / "..").resolve()
+    dstpath = Path(__file__).resolve().parents[2]  # komodoenv/root/bin/update.py
     update_bins(srcpath, dstpath)
     update_enable_script(srcpath, dstpath)
     create_pth(config, srcpath, dstpath)
