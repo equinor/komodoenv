@@ -227,7 +227,7 @@ def copy_jupyter_dirs(config: dict) -> None:
     """
     srcpath = Path(config["komodo-root"]) / config["current-release"] / "root"
     if not srcpath.is_dir():
-        srcpath = Path(str(srcpath) + rhel_version_suffix()) / "root"
+        srcpath = Path(str(srcpath.parent) + rhel_version_suffix()) / "root"
     dstpath = Path(__file__).resolve().parents[1]
     notebook_version = get_pkg_version(config, srcpath, "notebook")
     if not (notebook_version and int(notebook_version[0]) >= 7):
