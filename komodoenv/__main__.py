@@ -189,7 +189,9 @@ def main(args=None):
     texts = {
         "beta": blue(
             "Komodoenv is still in beta. Be aware that issues might occur and "
-            "recreating environments once in a while is necessary.\n\n"
+            "recreating environments once in a while is necessary.\n"
+            "If you encounter issues with the Jupyter environment, try "
+            "running 'komodoenv-update' or sourcing the komodoenv again.\n\n"
             "For progress on stabilising komodoenv, see: "
             "https://github.com/equinor/komodoenv/milestone/1\n"
         ),
