@@ -26,8 +26,7 @@ def python38_path():
     for exe in "/usr/bin/python3.8", "/opt/rh/rh-python38/root/bin/python3.8":
         if Path(exe).is_file():
             return exe
-    else:
-        raise RuntimeError("Could not locate python3.8")
+    raise RuntimeError("Could not locate python3.8")
 
 
 @pytest.fixture(scope="session")
