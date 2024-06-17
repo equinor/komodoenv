@@ -124,8 +124,11 @@ class Creator:
             pth for pth in self.srcpy.site_paths if pth.startswith(str(self.srcpath))
         ]
 
+        # we use zzz_komodo.pth to try and make it the last .pth file to be processed
+        # (alphabetically),
+        # and thus allowing for other editable installs to 'overwrite' komodo packages
         with self.create_file(
-            Path("root") / self.dstpy.site_packages_path / "_komodo.pth"
+            Path("root") / self.dstpy.site_packages_path / "zzz_komodo.pth"
         ) as f:
             print("\n".join(python_paths), file=f)
 

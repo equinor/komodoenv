@@ -409,9 +409,14 @@ def create_pth(config: dict, srcpath: Path, dstpath: Path):
         / "lib"
         / ("python" + config["python-version"])
         / "site-packages"
-        / "_komodo.pth"
     )
-    with open(path, "w", encoding="utf-8") as f:
+    # If upgrading from an old komodoenv using '_komodo.pth'
+    # to a newer which uses 'zzz_komodo.pth' we must make sure to
+    # remove the old _komodo.pth.
+    old_style_pth = path / "_komodo.pth"
+    old_style_pth.unlink(missing_ok=True)
+    new_style_pth = path / "zzz_komodo.pth"
+    with open(new_style_pth, "w", encoding="utf-8") as f:
         for lib in "lib64", "lib":
             f.write(
                 str(
