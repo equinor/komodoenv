@@ -1,15 +1,7 @@
 import json
 import os
-from enum import Enum
 from pathlib import Path
 from subprocess import PIPE, Popen
-
-
-class PythonType(Enum):
-    UNKNOWN = 0
-    REAL = 1
-    SHIM = 2
-    VENV = 3
 
 
 class Python:
@@ -24,12 +16,10 @@ class Python:
             self.komodo_prefix = self.executable.parent.parent
 
         self.root = self.executable.parent.parent
-        self.type = PythonType.UNKNOWN
         self.version_info = None
 
     def make_dst(self, executable):
         py = Python(executable, self.komodo_prefix)
-        py.type = self.type
         py.version_info = self.version_info
         return py
 
@@ -45,24 +35,6 @@ class Python:
         # Get python sys.path
         script = b"import sys,json;print(json.dumps(sys.path))"
         self.site_paths = json.loads(self.call(script=script, env=env))
-
-        # Existence of libexec suggests that this is a libexec-shim komodo release
-        libexec_python = self.root / "libexec" / "python"
-        if libexec_python.exists():
-            self.type = PythonType.SHIM
-            return
-
-        # Virtualenv adds a sys.real_prefix constant to the sys module. We can
-        # use this to check whether this is a real Python install or a
-        # virtualenv.
-        script = b"import sys;print(hasattr(sys,'real_prefix'))"
-        if self.call(script=script, env=env) == "True":
-            self.type = PythonType.VENV
-        else:
-            self.type = PythonType.REAL
-
-    def is_shim(self):
-        return self.type == PythonType.SHIM
 
     @property
     def site_packages_path(self):
