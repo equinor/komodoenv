@@ -7,6 +7,7 @@ alive and kicking. The reason for this is that we wish to use /usr/bin/python3
 to avoid any dependency on komodo during the update.
 """
 
+import contextlib
 import os
 import platform
 import re
@@ -413,8 +414,8 @@ def create_pth(config: dict, srcpath: Path, dstpath: Path):
     # If upgrading from an old komodoenv using '_komodo.pth'
     # to a newer which uses 'zzz_komodo.pth' we must make sure to
     # remove the old _komodo.pth.
-    old_style_pth = path / "_komodo.pth"
-    old_style_pth.unlink(missing_ok=True)
+    with contextlib.suppress(FileNotFoundError):
+        (path / "_komodo.pth").unlink()
     new_style_pth = path / "zzz_komodo.pth"
     with open(new_style_pth, "w", encoding="utf-8") as f:
         for lib in "lib64", "lib":
