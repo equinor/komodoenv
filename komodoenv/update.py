@@ -467,7 +467,7 @@ def main(args: List[str] = None):
         )
 
     elif args.check:
-        sys.exit(
+        print(
             dedent(
                 f"""\
         Warning: Your komodoenv is out of date. To update to the latest komodo release ({Path(current["current-release"]).name}), run the following command:
@@ -475,8 +475,10 @@ def main(args: List[str] = None):
         \tkomodoenv-update
 
         """
-            )
+            ),
+            file=sys.stderr,
         )
+        sys.exit(0)
 
     config.update(current)
     write_config(config)
