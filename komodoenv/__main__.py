@@ -9,8 +9,8 @@ from shutil import rmtree
 from typing import Tuple
 
 import distro
-from colors import blue, strip_color, yellow
 
+from komodoenv.colors import blue, strip_color, yellow
 from komodoenv.creator import Creator
 from komodoenv.statfs import is_nfs
 

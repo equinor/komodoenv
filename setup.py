@@ -35,7 +35,6 @@ setup(
     },
     test_suite="tests",
     install_requires=[
-        "ansicolors",
         "distro",
         "PyYAML",
     ],
