@@ -6,9 +6,9 @@ from pathlib import Path
 from textwrap import dedent
 
 import distro
-from colors import green, strip_color
 
 from komodoenv.bundle import get_bundled_wheel
+from komodoenv.colors import green, strip_color
 from komodoenv.python import Python
 
 
