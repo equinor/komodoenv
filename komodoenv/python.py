@@ -28,7 +28,7 @@ class Python:
         # Get python version_info
         script = b"import sys,json;print(json.dumps(sys.version_info[:]))"
         env = {
-            "LD_LIBRARY_PATH": f"{self.komodo_prefix}/lib64:{self.komodo_prefix}/lib"
+            "LD_LIBRARY_PATH": f"{self.komodo_prefix}/lib64:{self.komodo_prefix}/lib",
         }
         self.version_info = tuple(json.loads(self.call(script=script, env=env)))
 

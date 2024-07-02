@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import os
@@ -6,7 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 from shutil import rmtree
-from typing import Tuple
 
 import distro
 
@@ -27,7 +28,7 @@ def get_release_maturity_text(release_path):
         return yellow(
             "Warning: Tracking a bleeding release of komodo. It changes every day. "
             "You will need to recreate komodoenv in order to use new "
-            "executables in komodo.\n"
+            "executables in komodo.\n",
         )
     elif name.startswith("unstable"):
         return yellow("Warning: Tracking an unstable release of komodo.\n")
@@ -38,7 +39,7 @@ def get_release_maturity_text(release_path):
     else:
         return yellow(
             "Warning: Tracking a singular release. It will not receive updates. "
-            "This'll require recreating komodoenv to get updated software.\n"
+            "This'll require recreating komodoenv to get updated software.\n",
         )
 
 
@@ -52,9 +53,12 @@ def distro_suffix():
     return f"-rhel{distro.major_version()}"
 
 
-def resolve_release(
-    root: Path, name: str, no_update: bool = False
-) -> Tuple[Path, Path]:
+def resolve_release(  # noqa: C901
+    *,
+    root: Path,
+    name: str,
+    no_update: bool = False,
+) -> tuple[Path, Path]:
     """Autodetect komodo release heuristically"""
     if not (root / name / "enable").is_file():
         sys.exit(f"'{root / name}' is not a valid komodo release")
@@ -76,7 +80,8 @@ def resolve_release(
     )
 
     if len(python_info) != 2:
-        raise RuntimeError(f"Expected exactly 2 lines, but got {len(python_info)}")
+        msg = f"Expected exactly 2 lines, but got {len(python_info)}"
+        raise RuntimeError(msg)
     actual_path = Path(python_info[0]).parents[2]  # <path>/root/bin/python
     if no_update:
         return (actual_path, actual_path)
@@ -89,7 +94,8 @@ def resolve_release(
 
     base_name = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", name)
     if base_name is None:
-        raise ValueError("Could not find the release.")
+        msg = "Could not find the release."
+        raise ValueError(msg)
     name = base_name[1] + pyver
 
     print(f"Looking for {name}")
@@ -110,7 +116,7 @@ def resolve_release(
 
     sys.exit(
         "Could not automatically detect an appropriate Komodo release to track (one of: stable, testing, unstable, bleeding).\n"
-        "Use --no-update to make a komodoenv of a singular release."
+        "Use --no-update to make a komodoenv of a singular release.",
     )
 
 
@@ -150,7 +156,10 @@ def parse_args(args):
         help="Absolute path to komodo root (default: /prog/res/komodo for Onprem, /prog/komodo for Azure)",
     )
     ap.add_argument(
-        "--force-color", action="store_true", default=False, help="Force color output"
+        "--force-color",
+        action="store_true",
+        default=False,
+        help="Force color output",
     )
     ap.add_argument("destination", type=str, help="Where to create komodoenv")
 
@@ -158,7 +167,8 @@ def parse_args(args):
 
     args.root = Path(args.root)
     if not args.root.is_dir():
-        raise ValueError("The given root is not a directory.")
+        msg = "The given root is not a directory."
+        raise ValueError(msg)
 
     if "/" in args.release:
         args.release = Path(args.release)
@@ -167,7 +177,9 @@ def parse_args(args):
 
     if not args.release or not args.track:
         args.release, args.track = resolve_release(
-            args.root, str(args.release), no_update=args.no_update
+            root=args.root,
+            name=str(args.release),
+            no_update=args.no_update,
         )
     args.track = Path(args.track)
     args.destination = Path(args.destination).absolute()
@@ -177,7 +189,7 @@ def parse_args(args):
             "Could not automatically detect active Komodo release. "
             "Either enable a Komodo release that supports komodoenv "
             "or specify release manually with the "
-            "`--release' argument. "
+            "`--release' argument. ",
         )
         ap.print_help()
         sys.exit(1)
@@ -193,12 +205,12 @@ def main(args=None):
             "If you encounter issues with the Jupyter environment or 'rips', try "
             "running 'komodoenv-update' or sourcing the komodoenv again.\n\n"
             "For progress on stabilising komodoenv, see: "
-            "https://github.com/equinor/komodoenv/milestone/1\n"
+            "https://github.com/equinor/komodoenv/milestone/1\n",
         ),
         "nfs": yellow(
             "Warning: Komodoenv target directory is not located on an NFS "
             "filesystem. Be aware that multi-machine workloads via eg. LSF "
-            "might not work correctly.\n"
+            "might not work correctly.\n",
         ),
     }
 
@@ -223,7 +235,13 @@ def main(args=None):
     if not is_nfs(args.destination):
         print(texts["nfs"], file=sys.stderr)
 
-    creator = Creator(args.root, args.release, args.track, args.destination, use_color)
+    creator = Creator(
+        komodo_root=args.root,
+        srcpath=args.release,
+        trackpath=args.track,
+        dstpath=args.destination,
+        use_color=use_color,
+    )
     creator.create()
 
 

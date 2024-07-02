@@ -3,7 +3,6 @@ import platform
 import re
 from pathlib import Path
 from subprocess import check_output
-from typing import List, Optional
 
 import pytest
 
@@ -26,7 +25,8 @@ def python38_path():
     for exe in "/usr/bin/python3.8", "/opt/rh/rh-python38/root/bin/python3.8":
         if Path(exe).is_file():
             return exe
-    raise RuntimeError("Could not locate python3.8")
+    msg = "Could not locate python3.8"
+    raise RuntimeError(msg)
 
 
 @pytest.fixture(scope="session")
@@ -65,7 +65,7 @@ def komodo_root(tmp_path_factory, python38_path):
     return path
 
 
-def _install(python: str, path: Path, packages: Optional[List[str]] = None):
+def _install(python: str, path: Path, packages=None):
     # Create virtualenv
     check_output(
         [
@@ -73,15 +73,15 @@ def _install(python: str, path: Path, packages: Optional[List[str]] = None):
             "-m",
             "venv",
             str(path / "root"),
-        ]
+        ],
     )
 
     # Create enable scripts
     (path / "enable").write_text(
-        f"export KOMODO_RELEASE={path.name}\nexport PATH={path}/root/bin:$PATH\n"
+        f"export KOMODO_RELEASE={path.name}\nexport PATH={path}/root/bin:$PATH\n",
     )
     (path / "enable.csh").write_text(
-        f"setenv KOMODO_RELEASE {path.name}\nsetenv PATH {path}/root/bin:$PATH\n"
+        f"setenv KOMODO_RELEASE {path.name}\nsetenv PATH {path}/root/bin:$PATH\n",
     )
 
     # Create a redirect script if path ends in '-rhelX'
@@ -94,4 +94,4 @@ def _install(python: str, path: Path, packages: Optional[List[str]] = None):
 
     # Install additional packages
     if packages:
-        check_output([str(path / "root/bin/pip"), "install"] + packages)
+        check_output([str(path / "root/bin/pip"), "install", *packages])

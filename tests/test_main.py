@@ -5,7 +5,7 @@ from tests.conftest import rhel_version
 
 
 def generate_test_params_simple(rhel_version):
-    base_params = [
+    return [
         ("2030.01.00-py38", "stable-py38", "stable"),
         ("2030.01.00-py38", "stable-py38", "stable-py3"),
         ("2030.01.00-py38", "stable-py38", "stable-py38"),
@@ -15,7 +15,6 @@ def generate_test_params_simple(rhel_version):
         (f"bleeding-py38-rhel{rhel_version}", "bleeding-py38", "bleeding-py3"),
         (f"bleeding-py38-rhel{rhel_version}", "bleeding-py38", "bleeding-py38"),
     ]
-    return base_params
 
 
 @pytest.mark.parametrize(
@@ -23,7 +22,7 @@ def generate_test_params_simple(rhel_version):
     generate_test_params_simple(rhel_version()),
 )
 def test_resolve_simple(komodo_root, track_name, name, expect):
-    release, tracked = main.resolve_release(komodo_root, name)
+    release, tracked = main.resolve_release(root=komodo_root, name=name)
     assert release == komodo_root / expect
     assert tracked == komodo_root / track_name
 
@@ -47,7 +46,7 @@ def test_resolve_simple(komodo_root, track_name, name, expect):
 )
 def test_resolve_fail(komodo_root, name):
     with pytest.raises(SystemExit):
-        main.resolve_release(komodo_root, name)
+        main.resolve_release(root=komodo_root, name=name)
 
 
 def test_resolve_fail_singular(komodo_root):
@@ -56,12 +55,12 @@ def test_resolve_fail_singular(komodo_root):
     the user and exit.
     """
     with pytest.raises(SystemExit) as exc:
-        main.resolve_release(komodo_root, "2030.01.01-py38")
+        main.resolve_release(root=komodo_root, name="2030.01.01-py38")
     assert "--no-update" in str(exc.value)
 
 
 def generate_test_params_no_update(rhel_version):
-    base_params = [
+    return [
         ("2030.01.00-py38", "stable"),
         ("2030.01.00-py38", "stable-py3"),
         ("2030.01.00-py38", "stable-py38"),
@@ -72,7 +71,6 @@ def generate_test_params_no_update(rhel_version):
         (f"bleeding-py38-rhel{rhel_version}", "bleeding-py3"),
         (f"bleeding-py38-rhel{rhel_version}", "bleeding-py38"),
     ]
-    return base_params
 
 
 @pytest.mark.parametrize(
@@ -80,6 +78,6 @@ def generate_test_params_no_update(rhel_version):
     generate_test_params_no_update(rhel_version()),
 )
 def test_resolve_no_update(komodo_root, expect, name):
-    release, tracked = main.resolve_release(komodo_root, name, no_update=True)
+    release, tracked = main.resolve_release(root=komodo_root, name=name, no_update=True)
     assert release == tracked
     assert release == komodo_root / expect

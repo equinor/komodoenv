@@ -17,7 +17,7 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from textwrap import dedent
-from typing import List
+from typing import List, Optional
 
 try:
     from distro import id as distro_id
@@ -216,7 +216,7 @@ def check_same_distro(config: dict) -> bool:
     sys.stderr.write(
         f"Warning: Current distribution '{thisdist}' doesn't match the one that "
         f"was used to generate this environment '{confdist}'. You might need to "
-        "recreate this komodoenv\n"
+        "recreate this komodoenv\n",
     )
     return False
 
@@ -271,7 +271,9 @@ def copy_config_dirs(config: dict) -> None:
 
 
 def get_pkg_version(
-    config: dict, srcpath: Path, package: str = "komodoenv"
+    config: dict,
+    srcpath: Path,
+    package: str = "komodoenv",
 ) -> List[str]:
     """Locate `package`'s version in the current komodo distribution. This format is
     defined in PEP 376 "Database of Installed Python Distributions".
@@ -322,13 +324,11 @@ def current_track(config: dict) -> dict:
     rp = path.resolve()
     st = path.stat()
 
-    config = {
+    return {
         "tracked-release": config["tracked-release"],
         "current-release": rp.name,
         "mtime-release": str(st.st_mtime),
     }
-
-    return config
 
 
 def should_update(config: dict, current: dict) -> bool:
@@ -373,7 +373,7 @@ def rewrite_executable(path: Path, python: str, text: bytes):
     #!/bin/bash
     export LD_LIBRARY_PATH={libs}${{LD_LIBRARY_PATH:+:${{LD_LIBRARY_PATH}}}}
     exec -a "$0" "{path!s}" "$@"
-    """
+    """,
         )
     ).encode("utf8")
 
@@ -425,9 +425,9 @@ def create_pth(config: dict, srcpath: Path, dstpath: Path):
                     / "root"
                     / lib
                     / ("python" + config["python-version"])
-                    / "site-packages"
+                    / "site-packages",
                 )
-                + "\n"
+                + "\n",
             )
 
 
@@ -446,7 +446,7 @@ def parse_args(args: List[str]):
     return ap.parse_args(args)
 
 
-def main(args: List[str] = None):
+def main(args: Optional[List[str]] = None):
     args = parse_args(args)
 
     config = read_config()
@@ -463,7 +463,7 @@ def main(args: List[str] = None):
 
     if args.check and not can_update(config):
         sys.exit(
-            "Warning: Your komodoenv is out of date. You will need to recreate komodo"
+            "Warning: Your komodoenv is out of date. You will need to recreate komodo",
         )
 
     elif args.check:
@@ -474,7 +474,7 @@ def main(args: List[str] = None):
 
         \tkomodoenv-update
 
-        """
+        """,
             ),
             file=sys.stderr,
         )
