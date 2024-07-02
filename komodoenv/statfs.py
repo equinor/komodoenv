@@ -38,7 +38,7 @@ class _Statfs(Structure):
 
 def _test_fs_type(path, f_type):
     if sys.platform != "linux":
-        return
+        return None
 
     path = Path(path)
     while not path.is_dir():

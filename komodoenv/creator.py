@@ -22,7 +22,15 @@ def open_chmod(path: Path, mode: str = "w", file_mode=0o644):
 class Creator:
     _fmt_action = "  " + green("{action:>10s}") + "    {message}"
 
-    def __init__(self, komodo_root, srcpath, trackpath, dstpath=None, use_color=False):
+    def __init__(
+        self,
+        *,
+        komodo_root,
+        srcpath,
+        trackpath,
+        dstpath=None,
+        use_color=False,
+    ):
         if not use_color:
             self._fmt_action = strip_color(self._fmt_action)
 
@@ -116,27 +124,29 @@ class Creator:
                 komodoenv-version = {distribution('komodoenv').version}
                 komodo-root = {self.komodo_root}
                 linux-dist = {distro.id() + distro.version_parts()[0]}
-                """
-                )
+                """,
+                ),
             )
 
         python_paths = [
             pth for pth in self.srcpy.site_paths if pth.startswith(str(self.srcpath))
         ]
 
-        # we use zzz_komodo.pth to try and make it the last .pth file to be processed
-        # (alphabetically),
-        # and thus allowing for other editable installs to 'overwrite' komodo packages
+        # We use zzz_komodo.pth to try and make it the last .pth file to be processed
+        # alphabetically, and thus allowing for other editable installs to 'overwrite'
+        # komodo packages.
         with self.create_file(
-            Path("root") / self.dstpy.site_packages_path / "zzz_komodo.pth"
+            Path("root") / self.dstpy.site_packages_path / "zzz_komodo.pth",
         ) as f:
             print("\n".join(python_paths), file=f)
 
         # Create & run komodo-update
         with open(
-            Path(__file__).parent / "update.py", encoding="utf-8"
+            Path(__file__).parent / "update.py",
+            encoding="utf-8",
         ) as inf, self.create_file(
-            Path("root/bin/komodoenv-update"), file_mode=0o755
+            Path("root/bin/komodoenv-update"),
+            file_mode=0o755,
         ) as outf:
             outf.write(inf.read())
         self.run("root/bin/komodoenv-update")
@@ -158,6 +168,6 @@ class Creator:
         Komodoenv has successfully been generated. You can now pip-install software.
 
             $ source {enable_script}
-        """
-            )
+        """,
+            ),
         )

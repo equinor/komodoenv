@@ -6,23 +6,28 @@ src = ["komodoenv"]
 line-length = 88
 [tool.ruff.lint]
 select = [
-  "W",   # pycodestyle
-  "I",   # isort
-  "B",   # flake-8-bugbear
-  "SIM", # flake-8-simplify
-  "F",   # pyflakes
-  "UP",  # pyupgrades
-  "C4",  # flake8-comprehensions
-  "PL",
+  "ALL"
 ]
 
-ignore = ["PLW2901", # redefined-loop-name
-          "PLR2004", # magic-value-comparison
-          "PLR0915", # too-many-statements
-          "PLR0912", # too-many-branches
-          "PLR5501", # collapsible-else-if
-          "PLR0911",  # too-many-return-statements
+ignore = [
+          "PLR2004",  # magic-value-comparison
+          "D",  # pydocstyle
+          "E501",  # line-too-long
+          "PTH123",  # builtin-open
+          "T201",  # print statements
+          "S603",  # `subprocess` call: check for execution of untrusted input
+          "S607",  # Starting a process with a partial executable path
+          "EXE001",  # Shebang is present but file is not executable
+          "RET505",  # superfluous-else-return
+          "PERF203",  # `try`-`except` within a loop incurs performance overhead
+          "ANN",  # flake8-annotations
+          "ISC001",  # single-line-implicit-string-concatenation (conflict ruff formatter)
+          "COM812",  # missing-trailing-comma (conflict ruff formatter)
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S108", "ANN", "PT006"]
+"komodoenv/update.py" = ["FA102", "FA100"]
 
 [tool.ruff.lint.pylint]
-max-args = 20
+max-args = 10

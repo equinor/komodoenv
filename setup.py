@@ -19,7 +19,7 @@ def download_bundled_wheels() -> None:
             "wheel",
             "--dest",
             dest,
-        ]
+        ],
     )
 
 

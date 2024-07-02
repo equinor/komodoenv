@@ -19,7 +19,7 @@ def test_rewrite_executable_python():
     if __name__ == '__main__':
         sys.exit(
             load_entry_point('pip==8.1.2', 'console_scripts', 'pip')()
-        )"""
+        )""",
     )
 
     python = "/prog/res/komodo/bin/python"
@@ -27,7 +27,9 @@ def test_rewrite_executable_python():
     lines[0] = "#!" + python
 
     actual = update.rewrite_executable(
-        Path("/prog/res/komodo/bin/pip"), python, pip.encode("utf-8")
+        Path("/prog/res/komodo/bin/pip"),
+        python,
+        pip.encode("utf-8"),
     )
     assert "\n".join(lines).encode("utf-8") == actual
 
@@ -42,11 +44,13 @@ def test_rewrite_executable_binary():
     #!/bin/bash
     export LD_LIBRARY_PATH=/prog/res/komodo/lib:/prog/res/komodo/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
     exec -a "$0" "/prog/res/komodo/bin/bash" "$@"
-    """
+    """,
     )
 
     assert expect.encode("utf-8") == update.rewrite_executable(
-        Path("/prog/res/komodo/bin/bash"), python, sh
+        Path("/prog/res/komodo/bin/bash"),
+        python,
+        sh,
     )
 
 
@@ -56,7 +60,7 @@ def test_rewrite_executable_other_shebang():
         """\
     #!/prog/res/komodo/bin/ruby
     puts :HelloWorld
-        """
+        """,
     )
 
     expect = dedent(
@@ -64,11 +68,13 @@ def test_rewrite_executable_other_shebang():
     #!/bin/bash
     export LD_LIBRARY_PATH=/prog/res/komodo/lib:/prog/res/komodo/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
     exec -a "$0" "/prog/res/komodo/bin/gem" "$@"
-    """
+    """,
     )
 
     assert expect.encode("utf-8") == update.rewrite_executable(
-        Path("/prog/res/komodo/bin/gem"), python, gem.encode("utf-8")
+        Path("/prog/res/komodo/bin/gem"),
+        python,
+        gem.encode("utf-8"),
     )
 
 
@@ -77,7 +83,7 @@ def test_track(tmpdir):
         (tmpdir / "bleeding").mkdir()
 
         actual = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"}
+            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"},
         )
         assert actual["tracked-release"] == "bleeding"
         assert actual["current-release"] == "bleeding"
@@ -90,7 +96,7 @@ def test_track_symlink(tmpdir):
         (tmpdir / "stable").mksymlinkto("bleeding")
 
         actual = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "stable"}
+            {"komodo-root": str(tmpdir), "tracked-release": "stable"},
         )
         assert actual["tracked-release"] == "stable"
         assert actual["current-release"] == "bleeding"
@@ -104,7 +110,7 @@ def test_should_update_trivial(tmpdir):
         (tmpdir / "bleeding").mkdir()
 
         config = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"}
+            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"},
         )
         assert not update.should_update(config, config)
 
@@ -114,7 +120,7 @@ def test_should_update_time(tmpdir):
         (tmpdir / "bleeding").mkdir()
 
         config = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"}
+            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"},
         )
 
         (tmpdir / "bleeding").remove()
@@ -122,7 +128,7 @@ def test_should_update_time(tmpdir):
         (tmpdir / "bleeding").mkdir()
 
         current = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"}
+            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"},
         )
         assert update.should_update(config, current)
 
@@ -134,14 +140,14 @@ def test_should_update_symlink(tmpdir):
         (tmpdir / "stable").mksymlinkto("a")
 
         config = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "stable"}
+            {"komodo-root": str(tmpdir), "tracked-release": "stable"},
         )
 
         (tmpdir / "stable").remove()
         (tmpdir / "stable").mksymlinkto("b")
 
         current = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "stable"}
+            {"komodo-root": str(tmpdir), "tracked-release": "stable"},
         )
         assert update.should_update(config, current)
 
