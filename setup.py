@@ -15,7 +15,7 @@ def download_bundled_wheels() -> None:
             "pip",
             "download",
             "pip",
-            "setuptools",
+            "setuptools<71",
             "wheel",
             "--dest",
             dest,
