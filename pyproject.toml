@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=30.3.0", "wheel", "setuptools_scm", "pip"]
+requires = ["setuptools>=30.3.0", "setuptools_scm", "pip>=24"]
 
 [tool.ruff]
 src = ["komodoenv"]

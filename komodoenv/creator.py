@@ -150,8 +150,6 @@ class Creator:
         ) as outf:
             outf.write(inf.read())
         self.run("root/bin/komodoenv-update")
-        self.pip_install("setuptools")
-        self.pip_install("wheel")
         self.pip_install("pip")
 
         self.remove_file("root/shims/komodoenv")
