@@ -75,6 +75,7 @@ class Creator:
                 "-m",
                 "venv",
                 "--copies",
+                "--without-pip",
                 str(self.dstpath / "root"),
             ],
             env=env,
