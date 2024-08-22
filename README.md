@@ -1,12 +1,12 @@
 # Komodoenv
 
 Komodoenv is to a Komodo release as what
-[virtualenv](https://pypi.org/project/virtualenv/) is to a Python installation.
+[venv](https://docs.python.org/3/library/venv.html) is to a Python installation.
 Komodoenv creates a user-modifiable komodo environment based on an existing
 komodo release, allowing users to install additional or updated packages without
 the necessity for ugly hacks.
 
-Komodoenv uses [virtualenv](https://pypi.org/project/virtualenv/) at its core.
+Komodoenv uses [venv](https://docs.python.org/3/library/venv.html) at its core.
 
 ## Usage
 
@@ -43,7 +43,7 @@ release packages.
 Komodoenv is meant to be part of a [komodo](https://github.com/equinor/komodo)
 release. As such, it is not meant to be installed by users directly.
 
-This project requires Python 3.8. Then, install this project with `pip install .`
+This project requires Python 3.8 or newer. Then, install this project with `pip install .`
 
 ### Testing
 Komodoenv uses `pytest` for test running. Ensure that it's installed with `pip

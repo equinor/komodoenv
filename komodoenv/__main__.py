@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import logging
 import os
 import re
 import subprocess
@@ -185,11 +184,12 @@ def parse_args(args):
     args.destination = Path(args.destination).absolute()
 
     if args.release is None or not args.release.is_dir():
-        logging.error(
+        print(
             "Could not automatically detect active Komodo release. "
             "Either enable a Komodo release that supports komodoenv "
             "or specify release manually with the "
             "`--release' argument. ",
+            sys.stderr,
         )
         ap.print_help()
         sys.exit(1)
@@ -199,13 +199,10 @@ def parse_args(args):
 
 def main(args=None):
     texts = {
-        "beta": blue(
-            "Komodoenv is still in beta. Be aware that issues might occur and "
-            "recreating environments once in a while is necessary.\n"
-            "If you encounter issues with the Jupyter environment or 'rips', try "
-            "running 'komodoenv-update' or sourcing the komodoenv again.\n\n"
-            "For progress on stabilising komodoenv, see: "
-            "https://github.com/equinor/komodoenv/milestone/1\n",
+        "info": blue(
+            "Info: "
+            "If you encounter issues with the Jupyter environment or the 'rips' package, try "
+            "running 'komodoenv-update' or sourcing the komodoenv again.\n"
         ),
         "nfs": yellow(
             "Warning: Komodoenv target directory is not located on an NFS "
@@ -229,7 +226,7 @@ def main(args=None):
         texts = {key: strip_color(val) for key, val in texts.items()}
         release_text = strip_color(release_text)
 
-    print(texts["beta"], file=sys.stderr)
+    print(texts["info"], file=sys.stderr)
     print(release_text, file=sys.stderr)
 
     if not is_nfs(args.destination):
