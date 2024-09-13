@@ -33,11 +33,6 @@ def test_resolve_simple(komodo_root, track_name, name, expect):
         "",
         "bleed",
         "bleeding-",
-        # Unstable points to a non-existant, future version of RHEL and
-        # therefore not possible to resolve
-        "unstable",
-        "unstable-py3",
-        "unstable-py38",
         "2030.03.00-py38",
         "2030.03.00-py38-rhel9",
         # Singular release

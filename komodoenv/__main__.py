@@ -29,8 +29,6 @@ def get_release_maturity_text(release_path):
             "You will need to recreate komodoenv in order to use new "
             "executables in komodo.\n",
         )
-    elif name.startswith("unstable"):
-        return yellow("Warning: Tracking an unstable release of komodo.\n")
     elif name.startswith("testing"):
         return yellow("Warning: Tracking a testing release of komodo.\n")
     elif name.startswith("stable"):
@@ -99,7 +97,7 @@ def resolve_release(  # noqa: C901
 
     print(f"Looking for {name}")
 
-    for mode in "stable", "testing", "unstable", "bleeding":
+    for mode in "stable", "testing", "bleeding":
         for rhver in "", distro_suffix():
             dir_ = root / (mode + pyver + rhver)
             track = root / (mode + pyver)
@@ -114,7 +112,7 @@ def resolve_release(  # noqa: C901
                 return (symlink, track)
 
     sys.exit(
-        "Could not automatically detect an appropriate Komodo release to track (one of: stable, testing, unstable, bleeding).\n"
+        "Could not automatically detect an appropriate Komodo release to track (one of: stable, testing, bleeding).\n"
         "Use --no-update to make a komodoenv of a singular release.",
     )
 

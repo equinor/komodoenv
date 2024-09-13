@@ -54,8 +54,6 @@ def komodo_root(tmp_path_factory, python38_path):
         ("stable", "stable-py3", "stable-py38", "2030.01-py38"),
         # Testing points to py38, rhel7
         ("testing", "testing-py3", "testing-py38", "2030.02-py38"),
-        # Unstable refers to a future version of RHEL
-        ("unstable", "unstable-py3", "unstable-py38", "2030.03-py38"),
         # Bleeding points to py38, rhel7
         ("bleeding", "bleeding-py3", "bleeding-py38"),
     ):
