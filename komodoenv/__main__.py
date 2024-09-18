@@ -42,7 +42,10 @@ def get_release_maturity_text(release_path):
 
 def distro_suffix():
     # Workaround to make tests pass on Github Actions
-    if "GITHUB_ACTIONS" in os.environ:
+    if (
+        "GITHUB_ACTIONS" in os.environ
+        and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted"
+    ):
         return "-rhel7"
 
     if distro.id() != "rhel":
