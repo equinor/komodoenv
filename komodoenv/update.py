@@ -17,7 +17,7 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 try:
     from distro import id as distro_id
@@ -25,17 +25,17 @@ try:
 except ImportError:
     # The 'distro' package isn't installed.
     #
-    def distro_id():
+    def distro_id() -> str:
         return "rhel"
 
     if "el7" in platform.release():
 
-        def distro_versions():
+        def distro_versions() -> Tuple[str, str, str]:
             return ("7", "0", "0")
 
     elif "el8" in platform.release():
 
-        def distro_versions():
+        def distro_versions() -> Tuple[str, str, str]:
             return ("8", "0", "0")
 
     else:
@@ -171,7 +171,7 @@ endif
 """
 
 
-def read_config() -> dict:
+def read_config() -> Dict[str, str]:
     with open(Path(__file__).parents[2] / "komodoenv.conf", encoding="utf-8") as f:
         lines = f.readlines()
     config = {}
@@ -202,7 +202,7 @@ def rhel_version_suffix() -> str:
     return "-" + distro_id() + distro_versions()[0]
 
 
-def check_same_distro(config: dict) -> bool:
+def check_same_distro(config: Dict[str, str]) -> bool:
     """Python might not run properly on a different distro than the one that
     komodoenv was first generated for. Returns True if the distro in the config
     matches ours, False otherwise.
@@ -221,7 +221,7 @@ def check_same_distro(config: dict) -> bool:
     return False
 
 
-def copy_config_dirs(config: dict) -> None:
+def copy_config_dirs(config: Dict[str, str]) -> None:
     """
     Notebook 7 does not play well with komodoenv, and so we need to copy the
     data and config dirs from the komodo release.
@@ -232,6 +232,9 @@ def copy_config_dirs(config: dict) -> None:
     srcpath = Path(config["komodo-root"]) / config["current-release"] / "root"
     if not srcpath.is_dir():
         srcpath = Path(str(srcpath.parent) + rhel_version_suffix()) / "root"
+        if not srcpath.is_dir():
+            msg = f"Not able to find the currently linked komodo release {config['current-release']}"
+            raise ValueError(msg)
     dstpath = Path(__file__).resolve().parents[1]
     notebook_version = get_pkg_version(config, srcpath, "notebook")
     src_share_jupyter = srcpath / "share" / "jupyter"
@@ -271,10 +274,10 @@ def copy_config_dirs(config: dict) -> None:
 
 
 def get_pkg_version(
-    config: dict,
+    config: Dict[str, str],
     srcpath: Path,
     package: str = "komodoenv",
-) -> List[str]:
+) -> Optional[List[str]]:
     """Locate `package`'s version in the current komodo distribution. This format is
     defined in PEP 376 "Database of Installed Python Distributions".
 
@@ -293,7 +296,7 @@ def get_pkg_version(
     return None
 
 
-def can_update(config: dict) -> bool:
+def can_update(config: Dict[str, str]) -> bool:
     """Compares the version of komodoenv that built the release with the one in the
     one we want to update to. If the major versions are the same, we know the
     layout is identical, and can be safely updated with this script.
@@ -302,6 +305,11 @@ def can_update(config: dict) -> bool:
     srcpath = (Path(config["komodo-root"]) / config["tracked-release"]).resolve()
     if not (srcpath / "root").is_dir():
         srcpath = Path(str(srcpath) + rhel_version_suffix())
+        if not (srcpath / "root").is_dir():
+            sys.waring(
+                f"Not able to find the tracked komodo release {config['tracked-release']}. Will not update."
+            )
+            return False
     version = get_pkg_version(config, srcpath / "root")
     if "komodoenv-version" not in config or version is None:
         return False
@@ -312,33 +320,38 @@ def can_update(config: dict) -> bool:
     return current_maj == updated_maj
 
 
-def write_config(config: dict):
+def write_config(config: Dict[str, str]):
     with open(Path(__file__).parents[2] / "komodoenv.conf", "w", encoding="utf-8") as f:
         for key, val in config.items():
             f.write(f"{key} = {val}\n")
 
 
-def current_track(config: dict) -> dict:
+def current_track(config: Dict[str, str]) -> Dict[str, str]:
     path = Path(config["komodo-root"]) / config["tracked-release"]
 
-    rp = path.resolve()
+    tracked_release = path.resolve()
+    if not (tracked_release / "root").is_dir():
+        tracked_release = Path(str(tracked_release) + rhel_version_suffix()).resolve()
+        if not (tracked_release / "root").is_dir():
+            msg = f"Not able to find the tracked komodo release {config['tracked-release']}"
+            raise ValueError(msg)
     st = path.stat()
 
     return {
         "tracked-release": config["tracked-release"],
-        "current-release": rp.name,
+        "current-release": tracked_release.name,
         "mtime-release": str(st.st_mtime),
     }
 
 
-def should_update(config: dict, current: dict) -> bool:
+def should_update(config: Dict[str, str], current: Dict[str, str]) -> bool:
     return any(
         config[x] != current[x]
         for x in ("tracked-release", "current-release", "mtime-release")
     )
 
 
-def enable_script(fmt: str, komodo_prefix: Path, komodoenv_prefix: Path):
+def enable_script(fmt: str, komodo_prefix: Path, komodoenv_prefix: Path) -> str:
     return fmt.format(
         komodo_prefix=str(komodo_prefix),
         komodo_release=komodo_prefix.name,
@@ -347,14 +360,14 @@ def enable_script(fmt: str, komodo_prefix: Path, komodoenv_prefix: Path):
     )
 
 
-def update_enable_script(komodo_prefix: Path, komodoenv_prefix: Path):
+def update_enable_script(komodo_prefix: Path, komodoenv_prefix: Path) -> None:
     with open(komodoenv_prefix / "enable", "w", encoding="utf-8") as f:
         f.write(enable_script(ENABLE_BASH, komodo_prefix, komodoenv_prefix))
     with open(komodoenv_prefix / "enable.csh", "w", encoding="utf-8") as f:
         f.write(enable_script(ENABLE_CSH, komodo_prefix, komodoenv_prefix))
 
 
-def rewrite_executable(path: Path, python: str, text: bytes):
+def rewrite_executable(path: Path, python: str, text: bytes) -> bytes:
     path = path.resolve()
     root = path.parents[1]
     libs = os.pathsep.join([str(root / "lib"), str(root / "lib64")])
@@ -378,7 +391,7 @@ def rewrite_executable(path: Path, python: str, text: bytes):
     ).encode("utf8")
 
 
-def update_bins(srcpath: Path, dstpath: Path):
+def update_bins(srcpath: Path, dstpath: Path) -> None:
     python = dstpath / "root" / "bin" / "python"
     shimdir = dstpath / "root" / "shims"
     if shimdir.is_dir():
@@ -403,7 +416,7 @@ def update_bins(srcpath: Path, dstpath: Path):
         shimpath.chmod(0o755)
 
 
-def create_pth(config: dict, srcpath: Path, dstpath: Path):
+def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
     path = (
         dstpath
         / "root"
@@ -446,18 +459,16 @@ def parse_args(args: List[str]):
     return ap.parse_args(args)
 
 
-def main(args: Optional[List[str]] = None):
+def main(args: Optional[List[str]] = None) -> None:
     args = parse_args(args)
 
     config = read_config()
-
     if not check_same_distro(config):
         return
 
     copy_config_dirs(config)
 
     current = current_track(config)
-
     if not should_update(config, current):
         return
 
@@ -484,8 +495,6 @@ def main(args: Optional[List[str]] = None):
     write_config(config)
 
     srcpath = Path(config["komodo-root"]) / config["current-release"]
-    if not (srcpath / "root").is_dir():
-        srcpath = Path(str(srcpath) + rhel_version_suffix())
 
     dstpath = Path(__file__).resolve().parents[2]  # komodoenv/root/bin/update.py
     update_bins(srcpath, dstpath)

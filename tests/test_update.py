@@ -1,3 +1,4 @@
+import shutil
 import sys
 import time
 from importlib.metadata import distribution
@@ -78,94 +79,88 @@ def test_rewrite_executable_other_shebang():
     )
 
 
-def test_track(tmpdir):
-    with tmpdir.as_cwd():
-        (tmpdir / "bleeding").mkdir()
+def test_track(tmp_path):
+    (tmp_path / "bleeding" / "root").mkdir(parents=True)
 
-        actual = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"},
-        )
-        assert actual["tracked-release"] == "bleeding"
-        assert actual["current-release"] == "bleeding"
-        assert abs(float(actual["mtime-release"]) - time.time()) <= 1.0
-
-
-def test_track_symlink(tmpdir):
-    with tmpdir.as_cwd():
-        (tmpdir / "bleeding").mkdir()
-        (tmpdir / "stable").mksymlinkto("bleeding")
-
-        actual = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "stable"},
-        )
-        assert actual["tracked-release"] == "stable"
-        assert actual["current-release"] == "bleeding"
-        assert (
-            abs(float(actual["mtime-release"]) - time.time()) <= 1.0
-        )  # This *could* cause false-negatives if for
+    actual = update.current_track(
+        {"komodo-root": str(tmp_path), "tracked-release": "bleeding"},
+    )
+    assert actual["tracked-release"] == "bleeding"
+    assert actual["current-release"] == "bleeding"
+    assert abs(float(actual["mtime-release"]) - time.time()) <= 1.0
 
 
-def test_should_update_trivial(tmpdir):
-    with tmpdir.as_cwd():
-        (tmpdir / "bleeding").mkdir()
+def test_track_symlink(tmp_path):
+    (tmp_path / "bleeding" / "root").mkdir(parents=True)
+    (tmp_path / "stable").symlink_to("bleeding")
 
-        config = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"},
-        )
-        assert not update.should_update(config, config)
-
-
-def test_should_update_time(tmpdir):
-    with tmpdir.as_cwd():
-        (tmpdir / "bleeding").mkdir()
-
-        config = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"},
-        )
-
-        (tmpdir / "bleeding").remove()
-        time.sleep(0.01)
-        (tmpdir / "bleeding").mkdir()
-
-        current = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "bleeding"},
-        )
-        assert update.should_update(config, current)
+    actual = update.current_track(
+        {"komodo-root": str(tmp_path), "tracked-release": "stable"},
+    )
+    assert actual["tracked-release"] == "stable"
+    assert actual["current-release"] == "bleeding"
+    assert (
+        abs(float(actual["mtime-release"]) - time.time()) <= 1.0
+    )  # This *could* cause false-negatives if for
 
 
-def test_should_update_symlink(tmpdir):
-    with tmpdir.as_cwd():
-        (tmpdir / "a").mkdir()
-        (tmpdir / "b").mkdir()
-        (tmpdir / "stable").mksymlinkto("a")
+def test_should_update_trivial(tmp_path):
+    (tmp_path / "bleeding" / "root").mkdir(parents=True)
 
-        config = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "stable"},
-        )
+    config = update.current_track(
+        {"komodo-root": str(tmp_path), "tracked-release": "bleeding"},
+    )
+    assert not update.should_update(config, config)
 
-        (tmpdir / "stable").remove()
-        (tmpdir / "stable").mksymlinkto("b")
 
-        current = update.current_track(
-            {"komodo-root": str(tmpdir), "tracked-release": "stable"},
-        )
-        assert update.should_update(config, current)
+def test_should_update_time(tmp_path):
+    (tmp_path / "bleeding" / "root").mkdir(parents=True)
+
+    config = update.current_track(
+        {"komodo-root": str(tmp_path), "tracked-release": "bleeding"},
+    )
+
+    shutil.rmtree(tmp_path / "bleeding")
+    time.sleep(0.01)
+    (tmp_path / "bleeding" / "root").mkdir(parents=True)
+
+    current = update.current_track(
+        {"komodo-root": str(tmp_path), "tracked-release": "bleeding"},
+    )
+    assert update.should_update(config, current)
+
+
+def test_should_update_symlink(tmp_path):
+    (tmp_path / "a" / "root").mkdir(parents=True)
+    (tmp_path / "b" / "root").mkdir(parents=True)
+    (tmp_path / "stable").symlink_to("a")
+
+    config = update.current_track(
+        {"komodo-root": str(tmp_path), "tracked-release": "stable"},
+    )
+
+    (tmp_path / "stable").unlink()
+    (tmp_path / "stable").symlink_to("b")
+
+    current = update.current_track(
+        {"komodo-root": str(tmp_path), "tracked-release": "stable"},
+    )
+    assert update.should_update(config, current)
 
 
 def test_get_pkg_version_exists():
     ver = update.get_pkg_version(
         {"python-version": "{}.{}".format(*sys.version_info)},
-        (Path(sys.executable) / ".." / "..").resolve(),
+        (Path(sys.executable).parents[1]),
         "pip",
     )
-
     assert ver == distribution("pip").version
 
 
 def test_get_pkg_version_none():
     ver = update.get_pkg_version(
         {"python-version": "{}.{}".format(*sys.version_info)},
-        (Path(sys.executable) / ".." / "..").resolve(),
+        (Path(sys.executable).parents[1]),
         "this-package-doesnt-exist",
     )
 
