@@ -1,7 +1,6 @@
 import sys
-from subprocess import PIPE, CalledProcessError, Popen, check_output
+from subprocess import PIPE, STDOUT, Popen, check_output
 
-import pytest
 from komodoenv.__main__ import main as _main
 
 
@@ -89,8 +88,13 @@ def test_update(request, komodo_root, tmp_path):
     request.addfinalizer(revert)
 
     # There's now an update
-    with pytest.raises(CalledProcessError):
-        check_output([str(tmp_path / "kenv/root/bin/komodoenv-update"), "--check"])
+    output = check_output(
+        [str(tmp_path / "kenv/root/bin/komodoenv-update"), "--check"], stderr=STDOUT
+    ).decode("utf-8")
+    assert (
+        "Warning: Your komodoenv is out of date. You will need to recreate komodo"
+        in output
+    )
 
     # Update
     script = """\

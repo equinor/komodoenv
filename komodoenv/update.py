@@ -28,12 +28,12 @@ except ImportError:
     def distro_id() -> str:
         return "rhel"
 
-    if "el7" in platform.release():
+    if ".el7" in platform.release():
 
         def distro_versions() -> Tuple[str, str, str]:
             return ("7", "0", "0")
 
-    elif "el8" in platform.release():
+    elif ".el8" in platform.release():
 
         def distro_versions() -> Tuple[str, str, str]:
             return ("8", "0", "0")
@@ -232,9 +232,6 @@ def copy_config_dirs(config: Dict[str, str]) -> None:
     srcpath = Path(config["komodo-root"]) / config["current-release"] / "root"
     if not srcpath.is_dir():
         srcpath = Path(str(srcpath.parent) + rhel_version_suffix()) / "root"
-        if not srcpath.is_dir():
-            msg = f"Not able to find the currently linked komodo release {config['current-release']}"
-            raise ValueError(msg)
     dstpath = Path(__file__).resolve().parents[1]
     notebook_version = get_pkg_version(config, srcpath, "notebook")
     src_share_jupyter = srcpath / "share" / "jupyter"
@@ -277,7 +274,7 @@ def get_pkg_version(
     config: Dict[str, str],
     srcpath: Path,
     package: str = "komodoenv",
-) -> Optional[List[str]]:
+) -> Optional[str]:
     """Locate `package`'s version in the current komodo distribution. This format is
     defined in PEP 376 "Database of Installed Python Distributions".
 
@@ -286,6 +283,8 @@ def get_pkg_version(
     pkgdir = srcpath / "lib" / ("python" + config["python-version"]) / "site-packages"
     pattern = re.compile(f"^{package}-(.+).dist-info")
 
+    if not pkgdir.is_dir():
+        return None
     matches = []
     for entry in pkgdir.iterdir():
         match = pattern.match(entry.name)
@@ -300,17 +299,11 @@ def can_update(config: Dict[str, str]) -> bool:
     """Compares the version of komodoenv that built the release with the one in the
     one we want to update to. If the major versions are the same, we know the
     layout is identical, and can be safely updated with this script.
-
     """
-    srcpath = (Path(config["komodo-root"]) / config["tracked-release"]).resolve()
-    if not (srcpath / "root").is_dir():
-        srcpath = Path(str(srcpath) + rhel_version_suffix())
-        if not (srcpath / "root").is_dir():
-            sys.waring(
-                f"Not able to find the tracked komodo release {config['tracked-release']}. Will not update."
-            )
-            return False
-    version = get_pkg_version(config, srcpath / "root")
+    track_path = (Path(config["komodo-root"]) / config["tracked-release"]).resolve()
+    if not (track_path / "root").is_dir():
+        track_path = Path(str(track_path) + rhel_version_suffix()).resolve()
+    version = get_pkg_version(config, track_path / "root")
     if "komodoenv-version" not in config or version is None:
         return False
 
@@ -333,8 +326,11 @@ def current_track(config: Dict[str, str]) -> Dict[str, str]:
     if not (tracked_release / "root").is_dir():
         tracked_release = Path(str(tracked_release) + rhel_version_suffix()).resolve()
         if not (tracked_release / "root").is_dir():
-            msg = f"Not able to find the tracked komodo release {config['tracked-release']}"
-            raise ValueError(msg)
+            print(
+                f"Not able to find the tracked komodo release {config['tracked-release']}. Will not update.",
+                file=sys.stderr,
+            )
+            sys.exit(0)
     st = path.stat()
 
     return {
@@ -473,9 +469,11 @@ def main(args: Optional[List[str]] = None) -> None:
         return
 
     if args.check and not can_update(config):
-        sys.exit(
+        print(
             "Warning: Your komodoenv is out of date. You will need to recreate komodo",
+            file=sys.stderr,
         )
+        sys.exit(0)
 
     elif args.check:
         print(
