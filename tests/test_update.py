@@ -1,11 +1,22 @@
+import importlib
 import shutil
 import sys
 import time
 from importlib.metadata import distribution
 from pathlib import Path
 from textwrap import dedent
+from unittest.mock import mock_open, patch
 
+import pytest
 from komodoenv import update
+
+CONFIG_CONTENT = """
+key1=value1
+key2 = value2
+# This is a comment
+key3=value3
+malformed_line
+"""
 
 
 def test_rewrite_executable_python():
@@ -148,20 +159,160 @@ def test_should_update_symlink(tmp_path):
     assert update.should_update(config, current)
 
 
-def test_get_pkg_version_exists():
+def test_current_track_warning(tmp_path, capsys):
+    sample_config = {
+        "komodo-root": str(tmp_path),
+        "tracked-release": "nonexistent_release",
+    }
+    with patch("komodoenv.update.rhel_version_suffix", return_value="-rhel8"):
+        with pytest.raises(SystemExit) as sample:
+            update.current_track(sample_config)
+
+        expected_warning = f"Not able to find the tracked komodo release {sample_config['tracked-release']}. Will not update.\n"
+        assert expected_warning in capsys.readouterr().err
+
+        assert sample.value.code == 0
+
+
+@pytest.mark.parametrize(
+    "srcpath, package, validation",
+    [
+        (
+            Path(sys.executable).parents[1],
+            "pip",
+            lambda x: x == distribution("pip").version,
+        ),
+        (
+            Path("/nonexisting/path/here"),
+            "pip",
+            lambda x: x is None,
+        ),
+        (
+            Path(sys.executable).parents[1],
+            "this-package-doesnt-exist",
+            lambda x: x is None,
+        ),
+    ],
+)
+def test_get_pkg_version(srcpath, package, validation):
     ver = update.get_pkg_version(
         {"python-version": "{}.{}".format(*sys.version_info)},
-        (Path(sys.executable).parents[1]),
-        "pip",
+        srcpath,
+        package,
     )
-    assert ver == distribution("pip").version
+    assert validation(ver)
 
 
-def test_get_pkg_version_none():
-    ver = update.get_pkg_version(
-        {"python-version": "{}.{}".format(*sys.version_info)},
-        (Path(sys.executable).parents[1]),
-        "this-package-doesnt-exist",
-    )
+def test_read_config_with_valid_file():
+    with patch(
+        "komodoenv.update.open", new_callable=mock_open, read_data=CONFIG_CONTENT
+    ):
+        config = update.read_config()
+        assert config["key1"] == "value1"
+        assert config["key2"] == "value2"
+        assert config["key3"] == "value3"
+        assert "malformed_line" not in config
+        assert config["komodo-root"] == "/prog/res/komodo"
 
-    assert ver is None
+
+@pytest.mark.parametrize(
+    "input_rhel_version, expected_rhel_version",
+    [
+        (
+            "3.10.0-1062.el7.x86_64",
+            "-rhel7",
+        ),
+        (
+            "4.18.0-147.el8.x86_64",
+            "-rhel8",
+        ),
+    ],
+)
+def test_rhel_version_suffix_with_distro_not_installed(
+    input_rhel_version, expected_rhel_version
+):
+    with patch.dict("sys.modules", {"distro": None}), patch(
+        "platform.release",
+        return_value=input_rhel_version,
+    ):
+        from komodoenv import update
+
+        importlib.reload(update)
+        assert update.rhel_version_suffix() == expected_rhel_version
+
+
+def test_rhel_version_suffix_with_distro_not_installed_incompatible(capsys):
+    with patch.dict("sys.modules", {"distro": None}), patch(
+        "platform.release", return_value="5.6.14-300.fc32.x86_64"
+    ):
+        from komodoenv import update
+
+        importlib.reload(update)
+        assert (
+            "Warning: komodoenv is only compatible with RHEL7 or RHEL8"
+            in capsys.readouterr().err
+        )
+
+
+@pytest.mark.parametrize(
+    "original_rhel_version, current_rhel_version, warning_text, result",
+    [
+        (
+            "rhel7",
+            "3.10.0-1062.el7.x86_64",
+            "",
+            True,
+        ),
+        (
+            "rhel7",
+            "4.18.0-147.el8.x86_64",
+            "Warning: Current distribution 'rhel8' doesn't",
+            False,
+        ),
+    ],
+)
+def test_check_same_distro_true(
+    capsys, original_rhel_version, current_rhel_version, warning_text, result
+):
+    config = {"linux-dist": original_rhel_version}
+    with patch.dict("sys.modules", {"distro": None}), patch(
+        "platform.release", return_value=current_rhel_version
+    ):
+        from komodoenv import update
+
+        importlib.reload(update)
+        assert update.check_same_distro(config) == result
+        assert warning_text in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "old_version, new_version, result",
+    [
+        (
+            "2.3.4",
+            "2.5.1",
+            True,
+        ),
+        (
+            "2.3.4",
+            "3.5.1",
+            False,
+        ),
+        (
+            "2.3.4",
+            None,
+            False,
+        ),
+    ],
+)
+def test_can_update(monkeypatch, old_version, new_version, result):
+    monkeypatch.setattr("komodoenv.update.get_pkg_version", lambda _0, _1: new_version)
+    monkeypatch.setattr(Path, "is_dir", lambda _: True)
+
+    config = {
+        "komodo-root": "/path/to/komodo",
+        "tracked-release": "some-release",
+        "komodoenv-version": old_version,
+    }
+
+    assert update.can_update(config) == result
