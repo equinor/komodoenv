@@ -1,8 +1,36 @@
 [build-system]
 requires = ["setuptools>=65", "setuptools_scm", "pip>=24"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "komodoenv"
+authors = [
+    { name = "Equinor ASA", email = "fg_sib-scout@equinor.com" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dynamic = ["version"]
+license = { text = "GPL-3.0" }
+dependencies = [
+  "distro", 
+  "PyYAML"
+]
+
+[tool.setuptools]
+packages = ["komodoenv", "komodoenv.bundle"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+komodoenv = ["bundle/*.whl"]
+
+[tool.setuptools_scm]
+write_to = "src/komodoenv/_version.py"
+
+[project.scripts]
+komodoenv = "komodoenv.__main__:main"
 
 [tool.ruff]
-src = ["komodoenv"]
+src = ["src"]
 line-length = 88
 [tool.ruff.lint]
 select = [

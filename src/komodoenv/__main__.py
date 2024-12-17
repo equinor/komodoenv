@@ -46,7 +46,7 @@ def distro_suffix():
         "GITHUB_ACTIONS" in os.environ
         and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted"
     ):
-        return "-rhel7"
+        return "-rhel8"
 
     if distro.id() != "rhel":
         sys.exit("komodoenv only supports Red Hat Enterprise Linux")

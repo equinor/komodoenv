@@ -1,19 +1,19 @@
-import komodoenv.__main__ as main
 import pytest
 
+import komodoenv.__main__ as main
 from tests.conftest import rhel_version
 
 
 def generate_test_params_simple(rhel_version):
     return [
-        ("2030.01.00-py38", "stable-py38", "stable"),
-        ("2030.01.00-py38", "stable-py38", "stable-py3"),
-        ("2030.01.00-py38", "stable-py38", "stable-py38"),
-        ("2030.01.00-py38", "stable-py38", "2030.01"),
-        ("2030.01.00-py38", "stable-py38", "2030.01.00-py38"),
-        (f"bleeding-py38-rhel{rhel_version}", "bleeding-py38", "bleeding"),
-        (f"bleeding-py38-rhel{rhel_version}", "bleeding-py38", "bleeding-py3"),
-        (f"bleeding-py38-rhel{rhel_version}", "bleeding-py38", "bleeding-py38"),
+        ("2030.01.00-py311", "stable-py311", "stable"),
+        ("2030.01.00-py311", "stable-py311", "stable-py3"),
+        ("2030.01.00-py311", "stable-py311", "stable-py311"),
+        ("2030.01.00-py311", "stable-py311", "2030.01"),
+        ("2030.01.00-py311", "stable-py311", "2030.01.00-py311"),
+        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding"),
+        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding-py3"),
+        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding-py311"),
     ]
 
 
@@ -33,10 +33,10 @@ def test_resolve_simple(komodo_root, track_name, name, expect):
         "",
         "bleed",
         "bleeding-",
-        "2030.03.00-py38",
-        "2030.03.00-py38-rhel9",
+        "2030.03.00-py311",
+        "2030.03.00-py311-rhel9",
         # Singular release
-        "2030.01.01-py38",
+        "2030.01.01-py311",
     ],
 )
 def test_resolve_fail(komodo_root, name):
@@ -50,21 +50,21 @@ def test_resolve_fail_singular(komodo_root):
     the user and exit.
     """
     with pytest.raises(SystemExit) as exc:
-        main.resolve_release(root=komodo_root, name="2030.01.01-py38")
+        main.resolve_release(root=komodo_root, name="2030.01.01-py311")
     assert "--no-update" in str(exc.value)
 
 
 def generate_test_params_no_update(rhel_version):
     return [
-        ("2030.01.00-py38", "stable"),
-        ("2030.01.00-py38", "stable-py3"),
-        ("2030.01.00-py38", "stable-py38"),
-        ("2030.01.00-py38", "2030.01"),
-        ("2030.01.00-py38", "2030.01.00-py38"),
-        ("2030.01.01-py38", "2030.01.01-py38"),
-        (f"bleeding-py38-rhel{rhel_version}", "bleeding"),
-        (f"bleeding-py38-rhel{rhel_version}", "bleeding-py3"),
-        (f"bleeding-py38-rhel{rhel_version}", "bleeding-py38"),
+        ("2030.01.00-py311", "stable"),
+        ("2030.01.00-py311", "stable-py3"),
+        ("2030.01.00-py311", "stable-py311"),
+        ("2030.01.00-py311", "2030.01"),
+        ("2030.01.00-py311", "2030.01.00-py311"),
+        ("2030.01.01-py311", "2030.01.01-py311"),
+        (f"bleeding-py311-rhel{rhel_version}", "bleeding"),
+        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py3"),
+        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311"),
     ]
 
 

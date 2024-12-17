@@ -1,6 +1,8 @@
+import itertools
 import os
 import platform
 import re
+import shutil
 from pathlib import Path
 from subprocess import check_output
 
@@ -8,29 +10,21 @@ import pytest
 
 
 def rhel_version():
-    return "8" if "el8" in platform.release() else "7"
+    return "7" if ".el7" in platform.release() else "8"
 
 
 @pytest.fixture(scope="session")
-def python38_path():
-    """Locate Python 3.8 executable
-
-    On RHEL 7 python3.8 is found in SCL, but on RHEL 8 and Ubuntu (used by
-    Github Actions) has it installed in the system.
-
-    RHEL7        : yum install rh-python38-devel
-    RHEL8        : yum install python38-devel
-    Ubuntu 18.04 : apt-get install python3-venv python3.8-{dev,venv}
-    """
-    for exe in "/usr/bin/python3.8", "/opt/rh/rh-python38/root/bin/python3.8":
+def python311_path():
+    """Locate Python 3.11 executable"""
+    for exe in "/usr/bin/python3.11", str(shutil.which("python3.11")):
         if Path(exe).is_file():
             return exe
-    msg = "Could not locate python3.8"
+    msg = "Could not locate python3.11"
     raise RuntimeError(msg)
 
 
 @pytest.fixture(scope="session")
-def komodo_root(tmp_path_factory, python38_path):
+def komodo_root(tmp_path_factory, python311_path):
     """Komodo mock environment"""
     # It takes forever to generate the virtualenvs. Let the developer set this
     # environment variable to reuse a previously-bootstrapped komodo root.
@@ -40,24 +34,24 @@ def komodo_root(tmp_path_factory, python38_path):
     path = tmp_path_factory.mktemp("prog-res-komodo")
 
     # Install and configure pythons
-    _install(python38_path, path / "2030.01.00-py38", ["numpy==1.18.4"])
-    _install(python38_path, path / "2030.01.01-py38", ["numpy==1.19.1"])
-    _install(python38_path, path / "2030.02.00-py38")
-    _install(python38_path, path / "2030.03.00-py38-rhel9")
-    _install(python38_path, path / f"bleeding-py38-rhel{rhel_version()}")
+    _install(python311_path, path / "2030.01.00-py311", ["numpy==1.25.2"])
+    _install(python311_path, path / "2030.01.01-py311", ["numpy==1.26.4"])
+    _install(python311_path, path / "2030.02.00-py311")
+    _install(python311_path, path / "2030.03.00-py311-rhel9")
+    _install(python311_path, path / f"bleeding-py311-rhel{rhel_version()}")
 
     for chain in (
-        ("2030.01", "2030.01-py3", "2030.01-py38", "2030.01.00-py38"),
-        ("2030.02", "2030.02-py3", "2030.02-py38", "2030.02.00-py38"),
-        ("2030.03", "2030.03-py3", "2030.03-py38", "2030.03.00-py38"),
-        # Stable points to py38, unspecified-rhel
-        ("stable", "stable-py3", "stable-py38", "2030.01-py38"),
-        # Testing points to py38, rhel7
-        ("testing", "testing-py3", "testing-py38", "2030.02-py38"),
-        # Bleeding points to py38, rhel7
-        ("bleeding", "bleeding-py3", "bleeding-py38"),
+        ("2030.01", "2030.01-py3", "2030.01-py311", "2030.01.00-py311"),
+        ("2030.02", "2030.02-py3", "2030.02-py311", "2030.02.00-py311"),
+        ("2030.03", "2030.03-py3", "2030.03-py311", "2030.03.00-py311"),
+        # Stable points to py311, unspecified-rhel
+        ("stable", "stable-py3", "stable-py311", "2030.01-py311"),
+        # Testing points to py311, rhel8
+        ("testing", "testing-py3", "testing-py311", "2030.02-py311"),
+        # Bleeding points to py311, rhel8
+        ("bleeding", "bleeding-py3", "bleeding-py311"),
     ):
-        for src, dst in zip(chain[:-1], chain[1:]):
+        for src, dst in itertools.pairwise(chain):
             (path / src).symlink_to(dst)
 
     return path
