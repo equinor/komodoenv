@@ -10,11 +10,11 @@ on:
 jobs:
   tests:
     name: "Python ${{ matrix.python-version }}"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +24,9 @@ jobs:
       - name: Install Ubuntu Packages
         run: |
           sudo apt-get -y install tcsh
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt update
+          sudo apt install python3.11 python3.11-venv
       - name: Install Python Packages
         run: |
           pip install -U pip
@@ -31,5 +34,4 @@ jobs:
           pip install .
       - name: Test with pytest
         run: |
-          rm -r komodoenv  # Remove sources
           pytest -sv tests

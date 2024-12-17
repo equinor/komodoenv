@@ -32,7 +32,7 @@ def test_init_bash(komodo_root, tmp_path):
         "--root",
         str(komodo_root),
         "--release",
-        "2030.01.00-py38",
+        "2030.01.00-py311",
         str(tmp_path / "kenv"),
     )
 
@@ -40,7 +40,7 @@ def test_init_bash(komodo_root, tmp_path):
     source {kmd}/enable
 
     [[ $(which python) == "{kmd}/root/bin/python" ]]
-    [[ $(python -c "import numpy;print(numpy.__version__)") == "1.18.4" ]]
+    [[ $(python -c "import numpy;print(numpy.__version__)") == "1.25.2" ]]
     """.format(kmd=tmp_path / "kenv")
 
     assert bash(script) == 0
@@ -51,7 +51,7 @@ def test_init_csh(komodo_root, tmp_path):
         "--root",
         str(komodo_root),
         "--release",
-        "2030.01.00-py38",
+        "2030.01.00-py311",
         str(tmp_path / "kenv"),
     )
 
@@ -70,7 +70,7 @@ def test_update(request, komodo_root, tmp_path):
         "--root",
         str(komodo_root),
         "--release",
-        "2030.01-py38",
+        "2030.01-py311",
         str(tmp_path / "kenv"),
     )
 
@@ -78,12 +78,12 @@ def test_update(request, komodo_root, tmp_path):
     check_output([str(tmp_path / "kenv/root/bin/komodoenv-update"), "--check"])
 
     # Update to 2030.01.01
-    (komodo_root / "2030.01-py38").unlink()
-    (komodo_root / "2030.01-py38").symlink_to("2030.01.01-py38")
+    (komodo_root / "2030.01-py311").unlink()
+    (komodo_root / "2030.01-py311").symlink_to("2030.01.01-py311")
 
     def revert():
-        (komodo_root / "2030.01-py38").unlink()
-        (komodo_root / "2030.01-py38").symlink_to("2030.01.00-py38")
+        (komodo_root / "2030.01-py311").unlink()
+        (komodo_root / "2030.01-py311").symlink_to("2030.01.00-py311")
 
     request.addfinalizer(revert)
 
@@ -111,7 +111,7 @@ def test_update(request, komodo_root, tmp_path):
     source {kmd}/enable
 
     [[ $(which python) == "{kmd}/root/bin/python" ]]
-    [[ $(python -c "import numpy;print(numpy.__version__)") == "1.19.1" ]]
+    [[ $(python -c "import numpy;print(numpy.__version__)") == "1.26.4" ]]
     """.format(kmd=tmp_path / "kenv")
     assert bash(script) == 0
 

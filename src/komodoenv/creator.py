@@ -142,13 +142,16 @@ class Creator:
             print("\n".join(python_paths), file=f)
 
         # Create & run komodo-update
-        with open(
-            Path(__file__).parent / "update.py",
-            encoding="utf-8",
-        ) as inf, self.create_file(
-            Path("root/bin/komodoenv-update"),
-            file_mode=0o755,
-        ) as outf:
+        with (
+            open(
+                Path(__file__).parent / "update.py",
+                encoding="utf-8",
+            ) as inf,
+            self.create_file(
+                Path("root/bin/komodoenv-update"),
+                file_mode=0o755,
+            ) as outf,
+        ):
             outf.write(inf.read())
         self.run("root/bin/komodoenv-update")
         self.pip_install("pip")

@@ -8,6 +8,7 @@ from textwrap import dedent
 from unittest.mock import mock_open, patch
 
 import pytest
+
 from komodoenv import update
 
 CONFIG_CONTENT = """
@@ -231,9 +232,12 @@ def test_read_config_with_valid_file():
 def test_rhel_version_suffix_with_distro_not_installed(
     input_rhel_version, expected_rhel_version
 ):
-    with patch.dict("sys.modules", {"distro": None}), patch(
-        "platform.release",
-        return_value=input_rhel_version,
+    with (
+        patch.dict("sys.modules", {"distro": None}),
+        patch(
+            "platform.release",
+            return_value=input_rhel_version,
+        ),
     ):
         from komodoenv import update
 
@@ -242,8 +246,9 @@ def test_rhel_version_suffix_with_distro_not_installed(
 
 
 def test_rhel_version_suffix_with_distro_not_installed_incompatible(capsys):
-    with patch.dict("sys.modules", {"distro": None}), patch(
-        "platform.release", return_value="5.6.14-300.fc32.x86_64"
+    with (
+        patch.dict("sys.modules", {"distro": None}),
+        patch("platform.release", return_value="5.6.14-300.fc32.x86_64"),
     ):
         from komodoenv import update
 
@@ -275,8 +280,9 @@ def test_check_same_distro_true(
     capsys, original_rhel_version, current_rhel_version, warning_text, result
 ):
     config = {"linux-dist": original_rhel_version}
-    with patch.dict("sys.modules", {"distro": None}), patch(
-        "platform.release", return_value=current_rhel_version
+    with (
+        patch.dict("sys.modules", {"distro": None}),
+        patch("platform.release", return_value=current_rhel_version),
     ):
         from komodoenv import update
 

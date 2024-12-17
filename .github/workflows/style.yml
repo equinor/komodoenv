@@ -23,5 +23,5 @@ jobs:
 
       - name: Run ruff
         run: |
-          ruff check komodoenv tests
-          ruff format komodoenv tests --check
+          ruff check
+          ruff format --check

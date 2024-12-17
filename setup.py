@@ -6,7 +6,7 @@ from setuptools import setup
 
 
 def download_bundled_wheels() -> None:
-    dest = Path(__file__).parent / "komodoenv" / "bundle"
+    dest = Path(__file__).parent / "src" / "komodoenv" / "bundle"
     print(f"Downloading wheels to {dest.resolve()}")
     check_output(
         [
@@ -24,18 +24,9 @@ def download_bundled_wheels() -> None:
 download_bundled_wheels()
 
 setup(
-    name="komodoenv",
-    author="Equinor ASA",
-    author_email="fg_sib-scout@equinor.com",
+    package_dir={"": "src"},
     packages=["komodoenv", "komodoenv.bundle"],
     package_data={
         "komodoenv": ["bundle/*.whl"],
     },
-    test_suite="tests",
-    install_requires=[
-        "distro",
-        "PyYAML",
-    ],
-    entry_points={"console_scripts": ["komodoenv = komodoenv.__main__:main"]},
-    use_scm_version={"relative_to": __file__, "write_to": "komodoenv/_version.py"},
 )

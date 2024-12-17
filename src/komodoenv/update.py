@@ -17,7 +17,6 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, List, Optional, Tuple
 
 try:
     from distro import id as distro_id
@@ -30,12 +29,12 @@ except ImportError:
 
     if ".el7" in platform.release():
 
-        def distro_versions() -> Tuple[str, str, str]:
+        def distro_versions() -> tuple[str, str, str]:
             return ("7", "0", "0")
 
     elif ".el8" in platform.release():
 
-        def distro_versions() -> Tuple[str, str, str]:
+        def distro_versions() -> tuple[str, str, str]:
             return ("8", "0", "0")
 
     else:
@@ -171,7 +170,7 @@ endif
 """
 
 
-def read_config() -> Dict[str, str]:
+def read_config() -> dict[str, str]:
     with open(Path(__file__).parents[2] / "komodoenv.conf", encoding="utf-8") as f:
         lines = f.readlines()
     config = {}
@@ -202,7 +201,7 @@ def rhel_version_suffix() -> str:
     return "-" + distro_id() + distro_versions()[0]
 
 
-def check_same_distro(config: Dict[str, str]) -> bool:
+def check_same_distro(config: dict[str, str]) -> bool:
     """Python might not run properly on a different distro than the one that
     komodoenv was first generated for. Returns True if the distro in the config
     matches ours, False otherwise.
@@ -221,7 +220,7 @@ def check_same_distro(config: Dict[str, str]) -> bool:
     return False
 
 
-def copy_config_dirs(config: Dict[str, str]) -> None:
+def copy_config_dirs(config: dict[str, str]) -> None:
     """
     Notebook 7 does not play well with komodoenv, and so we need to copy the
     data and config dirs from the komodo release.
@@ -271,10 +270,10 @@ def copy_config_dirs(config: Dict[str, str]) -> None:
 
 
 def get_pkg_version(
-    config: Dict[str, str],
+    config: dict[str, str],
     srcpath: Path,
     package: str = "komodoenv",
-) -> Optional[str]:
+) -> str | None:
     """Locate `package`'s version in the current komodo distribution. This format is
     defined in PEP 376 "Database of Installed Python Distributions".
 
@@ -295,7 +294,7 @@ def get_pkg_version(
     return None
 
 
-def can_update(config: Dict[str, str]) -> bool:
+def can_update(config: dict[str, str]) -> bool:
     """Compares the version of komodoenv that built the release with the one in the
     one we want to update to. If the major versions are the same, we know the
     layout is identical, and can be safely updated with this script.
@@ -313,13 +312,13 @@ def can_update(config: Dict[str, str]) -> bool:
     return current_maj == updated_maj
 
 
-def write_config(config: Dict[str, str]):
+def write_config(config: dict[str, str]):
     with open(Path(__file__).parents[2] / "komodoenv.conf", "w", encoding="utf-8") as f:
         for key, val in config.items():
             f.write(f"{key} = {val}\n")
 
 
-def current_track(config: Dict[str, str]) -> Dict[str, str]:
+def current_track(config: dict[str, str]) -> dict[str, str]:
     path = Path(config["komodo-root"]) / config["tracked-release"]
 
     tracked_release = path.resolve()
@@ -340,7 +339,7 @@ def current_track(config: Dict[str, str]) -> Dict[str, str]:
     }
 
 
-def should_update(config: Dict[str, str], current: Dict[str, str]) -> bool:
+def should_update(config: dict[str, str], current: dict[str, str]) -> bool:
     return any(
         config[x] != current[x]
         for x in ("tracked-release", "current-release", "mtime-release")
@@ -412,7 +411,7 @@ def update_bins(srcpath: Path, dstpath: Path) -> None:
         shimpath.chmod(0o755)
 
 
-def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
+def create_pth(config: dict[str, str], srcpath: Path, dstpath: Path) -> None:
     path = (
         dstpath
         / "root"
@@ -440,7 +439,7 @@ def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
             )
 
 
-def parse_args(args: List[str]):
+def parse_args(args: list[str]):
     if args is None:
         args = sys.argv[1:]
 
@@ -455,7 +454,7 @@ def parse_args(args: List[str]):
     return ap.parse_args(args)
 
 
-def main(args: Optional[List[str]] = None) -> None:
+def main(args: list[str] | None = None) -> None:
     args = parse_args(args)
 
     config = read_config()
