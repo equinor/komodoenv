@@ -49,7 +49,7 @@ class Python:
             # Prepend '-' to tell Python to read from stdin
             args = ["-", *args]
 
-        env["PATH"] = f'{self.executable.parent.absolute()}:{os.environ["PATH"]}'
+        env["PATH"] = f"{self.executable.parent.absolute()}:{os.environ['PATH']}"
         env["LD_LIBRARY_PATH"] = f"{self.komodo_prefix}/lib64:{self.komodo_prefix}/lib"
 
         args = [self.executable, *args]
