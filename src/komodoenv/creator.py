@@ -122,7 +122,7 @@ class Creator:
                 tracked-release = {self.trackpath.name}
                 mtime-release = 0
                 python-version = {self.srcpy.version_info[0]}.{self.srcpy.version_info[1]}
-                komodoenv-version = {distribution('komodoenv').version}
+                komodoenv-version = {distribution("komodoenv").version}
                 komodo-root = {self.komodo_root}
                 linux-dist = {distro.id() + distro.version_parts()[0]}
                 """,
