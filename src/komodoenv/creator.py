@@ -102,7 +102,6 @@ class Creator:
                 "--no-cache-dir",
                 "--no-deps",
                 "--disable-pip-version-check",
-                "--no-python-version-warning",
                 dst_wheel,
             ],
             env=env,
