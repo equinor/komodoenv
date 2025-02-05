@@ -48,7 +48,6 @@ ignore = [
           "EXE001",  # Shebang is present but file is not executable
           "RET505",  # superfluous-else-return
           "PERF203",  # `try`-`except` within a loop incurs performance overhead
-          "ANN",  # flake8-annotations
           "ISC001",  # single-line-implicit-string-concatenation (conflict ruff formatter)
           "COM812",  # missing-trailing-comma (conflict ruff formatter)
 ]
@@ -59,3 +58,7 @@ ignore = [
 
 [tool.ruff.lint.pylint]
 max-args = 10
+
+[tool.mypy]
+show_error_code_links = true
+show_error_context = true

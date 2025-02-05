@@ -1,3 +1,6 @@
+import sys
+from pathlib import Path
+
 import pytest
 
 import komodoenv.__main__ as main
@@ -22,7 +25,9 @@ def generate_test_params_simple(rhel_version):
     generate_test_params_simple(rhel_version()),
 )
 def test_resolve_simple(komodo_root, track_name, name, expect):
-    release, tracked = main.resolve_release(root=komodo_root, name=name)
+    release, tracked = main.resolve_release(
+        root=komodo_root, release_path=Path(komodo_root / name)
+    )
     assert release == komodo_root / expect
     assert tracked == komodo_root / track_name
 
@@ -41,7 +46,7 @@ def test_resolve_simple(komodo_root, track_name, name, expect):
 )
 def test_resolve_fail(komodo_root, name):
     with pytest.raises(SystemExit):
-        main.resolve_release(root=komodo_root, name=name)
+        main.resolve_release(root=komodo_root, release_path=Path(komodo_root / name))
 
 
 def test_resolve_fail_singular(komodo_root):
@@ -50,7 +55,9 @@ def test_resolve_fail_singular(komodo_root):
     the user and exit.
     """
     with pytest.raises(SystemExit) as exc:
-        main.resolve_release(root=komodo_root, name="2030.01.01-py311")
+        main.resolve_release(
+            root=komodo_root, release_path=Path(komodo_root / "2030.01.01-py38")
+        )
     assert "--no-update" in str(exc.value)
 
 
@@ -73,6 +80,25 @@ def generate_test_params_no_update(rhel_version):
     generate_test_params_no_update(rhel_version()),
 )
 def test_resolve_no_update(komodo_root, expect, name):
-    release, tracked = main.resolve_release(root=komodo_root, name=name, no_update=True)
+    release, tracked = main.resolve_release(
+        root=komodo_root, release_path=Path(komodo_root / name), no_update=True
+    )
     assert release == tracked
     assert release == komodo_root / expect
+
+
+def test_no_enable_file(tmp_path):
+    (tmp_path / "some_release").mkdir()
+    sys.argv = [
+        "komodoenv",
+        "--root",
+        str(tmp_path),
+        "--release",
+        "some_release",
+        "--no-update",
+        "my_kenv",
+    ]
+    with pytest.raises(
+        ValueError, match="'*/some_release' is not a valid komodo release!"
+    ):
+        main.main()

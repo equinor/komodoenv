@@ -208,7 +208,7 @@ def test_read_config_with_valid_file():
     with patch(
         "komodoenv.update.open", new_callable=mock_open, read_data=CONFIG_CONTENT
     ):
-        config = update.read_config()
+        config = update.read_config("")
         assert config["key1"] == "value1"
         assert config["key2"] == "value2"
         assert config["key3"] == "value3"

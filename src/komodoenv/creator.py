@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import os
 import subprocess
-from contextlib import contextmanager
+from contextlib import _GeneratorContextManager, contextmanager
 from importlib.metadata import distribution
 from pathlib import Path
 from textwrap import dedent
+from typing import IO, TYPE_CHECKING, Any
 
 import distro
 
@@ -11,9 +14,14 @@ from komodoenv.bundle import get_bundled_wheel
 from komodoenv.colors import green, strip_color
 from komodoenv.python import Python
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @contextmanager
-def open_chmod(path: Path, mode: str = "w", file_mode=0o644):
+def open_chmod(
+    path: Path, mode: str = "w", file_mode: int = 0o644
+) -> Generator[IO[Any], Any, None]:
     with open(path, mode, encoding="utf-8") as file:
         yield file
     path.chmod(file_mode)
@@ -25,47 +33,45 @@ class Creator:
     def __init__(
         self,
         *,
-        komodo_root,
-        srcpath,
-        trackpath,
-        dstpath=None,
-        use_color=False,
-    ):
+        komodo_root: Path,
+        src_path: Path,
+        track_path: Path,
+        dst_path: Path,
+        use_color: bool = False,
+    ) -> None:
         if not use_color:
             self._fmt_action = strip_color(self._fmt_action)
 
         self.komodo_root = komodo_root
-        self.srcpath = srcpath
-        self.trackpath = trackpath
-        self.dstpath = dstpath
+        self.src_path = src_path
+        self.track_path = track_path
+        self.dst_path = dst_path
 
-        self.srcpy = Python(srcpath / "root/bin/python")
+        self.srcpy = Python(src_path / "root/bin/python")
         self.srcpy.detect()
 
-        self.dstpy = self.srcpy.make_dst(dstpath / "root/bin/python")
+        self.dstpy = self.srcpy.make_dst(dst_path / "root/bin/python")
 
-    def print_action(self, action, message):
+    def print_action(self, action: str, message: str) -> None:
         print(self._fmt_action.format(action=action, message=message))
 
-    def mkdir(self, path):
-        self.print_action("mkdir", path + "/")
-        (self.dstpath / path).mkdir()
+    def create_file(
+        self, path: Path | str, file_mode: int = 0o644
+    ) -> _GeneratorContextManager[IO[Any]]:
+        self.print_action("create", str(path))
+        return open_chmod(self.dst_path / path, file_mode=file_mode)
 
-    def create_file(self, path, file_mode=0o644):
-        self.print_action("create", path)
-        return open_chmod(self.dstpath / path, file_mode=file_mode)
-
-    def remove_file(self, path):
-        if not (self.dstpath / path).is_file():
+    def remove_file(self, path: Path) -> None:
+        if not (self.dst_path / path).is_file():
             return
 
-        self.print_action("remove", path)
-        (self.dstpath / path).unlink()
+        self.print_action("remove", str(path))
+        (self.dst_path / path).unlink()
 
-    def venv(self):
+    def venv(self) -> None:
         self.print_action("venv", f"using {self.srcpy.executable}")
 
-        env = {"LD_LIBRARY_PATH": str(self.srcpath / "root" / "lib"), **os.environ}
+        env = {"LD_LIBRARY_PATH": str(self.src_path / "root" / "lib"), **os.environ}
         subprocess.check_output(
             [
                 str(self.srcpy.executable)
@@ -76,14 +82,14 @@ class Creator:
                 "venv",
                 "--copies",
                 "--without-pip",
-                str(self.dstpath / "root"),
+                str(self.dst_path / "root"),
             ],
             env=env,
         )
 
-    def run(self, path):
-        self.print_action("run", path)
-        subprocess.check_output([str(self.dstpath / path)])
+    def run(self, path: Path) -> None:
+        self.print_action("run", str(path))
+        subprocess.check_output([str(self.dst_path / path)])
 
     def pip_install(self, package: str) -> None:
         pip_wheel = get_bundled_wheel("pip")
@@ -91,11 +97,11 @@ class Creator:
         self.print_action("install", package)
 
         env = os.environ.copy()
-        env["PYTHONPATH"] = pip_wheel
+        env["PYTHONPATH"] = str(pip_wheel)
 
         subprocess.check_output(
             [
-                str(self.dstpath / "root/bin/python"),
+                str(self.dst_path / "root/bin/python"),
                 "-m",
                 "pip",
                 "install",
@@ -107,8 +113,8 @@ class Creator:
             env=env,
         )
 
-    def create(self):
-        self.dstpath.mkdir()
+    def create(self) -> None:
+        self.dst_path.mkdir()
 
         self.venv()
 
@@ -117,8 +123,8 @@ class Creator:
             f.write(
                 dedent(
                     f"""\
-                current-release = {self.srcpath.name}
-                tracked-release = {self.trackpath.name}
+                current-release = {self.src_path.name}
+                tracked-release = {self.track_path.name}
                 mtime-release = 0
                 python-version = {self.srcpy.version_info[0]}.{self.srcpy.version_info[1]}
                 komodoenv-version = {distribution("komodoenv").version}
@@ -129,7 +135,7 @@ class Creator:
             )
 
         python_paths = [
-            pth for pth in self.srcpy.site_paths if pth.startswith(str(self.srcpath))
+            pth for pth in self.srcpy.site_paths if pth.startswith(str(self.src_path))
         ]
 
         # We use zzz_komodo.pth to try and make it the last .pth file to be processed
@@ -152,15 +158,15 @@ class Creator:
             ) as outf,
         ):
             outf.write(inf.read())
-        self.run("root/bin/komodoenv-update")
+        self.run(Path("root/bin/komodoenv-update"))
         self.pip_install("pip")
 
-        self.remove_file("root/shims/komodoenv")
+        self.remove_file(Path("root/shims/komodoenv"))
 
         if os.environ.get("SHELL", "").endswith("csh"):
-            enable_script = self.dstpath / "enable.csh"
+            enable_script = self.dst_path / "enable.csh"
         else:
-            enable_script = self.dstpath / "enable"
+            enable_script = self.dst_path / "enable"
 
         print(
             dedent(

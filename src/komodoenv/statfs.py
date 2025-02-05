@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from ctypes import (
     CDLL,
@@ -36,9 +38,10 @@ class _Statfs(Structure):
     )
 
 
-def _test_fs_type(path, f_type):
+def _test_fs_type(path: Path, f_type: int) -> bool:
     if sys.platform != "linux":
-        return None
+        msg = "Komodoenv is only compatible with linux."
+        raise OSError(msg)
 
     path = Path(path)
     while not path.is_dir():
@@ -52,11 +55,11 @@ def _test_fs_type(path, f_type):
     return stat.f_type == f_type
 
 
-def is_tmpfs(path):
+def is_tmpfs(path: Path) -> bool:
     """Test if `path` is on a `tmpfs` filesystem."""
     return _test_fs_type(path, _TMPFS_MAGIC)
 
 
-def is_nfs(path):
+def is_nfs(path: Path) -> bool:
     """Test if `path` is on a `nfs` filesystem."""
     return _test_fs_type(path, _NFS_SUPER_MAGIC)

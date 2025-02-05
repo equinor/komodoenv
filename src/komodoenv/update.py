@@ -14,14 +14,14 @@ import re
 import shutil
 import subprocess
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from textwrap import dedent
 from typing import Dict, List, Optional, Tuple
 
 try:
     from distro import id as distro_id
-    from distro import version_parts as distro_versions
+    from distro import version_parts as distro_versions  # type: ignore[misc]
 except ImportError:
     # The 'distro' package isn't installed.
     #
@@ -30,16 +30,24 @@ except ImportError:
 
     if ".el7" in platform.release():
 
-        def distro_versions() -> Tuple[str, str, str]:
+        def distro_versions() -> Tuple[str, str, str]:  # type: ignore[misc]
             return ("7", "0", "0")
 
     elif ".el8" in platform.release():
 
-        def distro_versions() -> Tuple[str, str, str]:
+        def distro_versions() -> Tuple[str, str, str]:  # type: ignore[misc]
             return ("8", "0", "0")
 
     else:
         sys.stderr.write("Warning: komodoenv is only compatible with RHEL7 or RHEL8")
+
+
+class KomodoenvUpdateNamespace(Namespace):
+    """
+    Komodoenv update argument parser namespace
+    """
+
+    check: bool
 
 
 ENABLE_BASH = """\
@@ -171,8 +179,8 @@ endif
 """
 
 
-def read_config() -> Dict[str, str]:
-    with open(Path(__file__).parents[2] / "komodoenv.conf", encoding="utf-8") as f:
+def read_config(config_path: Path) -> Dict[str, str]:
+    with open(config_path, encoding="utf-8") as f:
         lines = f.readlines()
     config = {}
     for line in lines:
@@ -313,7 +321,7 @@ def can_update(config: Dict[str, str]) -> bool:
     return current_maj == updated_maj
 
 
-def write_config(config: Dict[str, str]):
+def write_config(config: Dict[str, str]) -> None:
     with open(Path(__file__).parents[2] / "komodoenv.conf", "w", encoding="utf-8") as f:
         for key, val in config.items():
             f.write(f"{key} = {val}\n")
@@ -440,10 +448,7 @@ def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
             )
 
 
-def parse_args(args: List[str]):
-    if args is None:
-        args = sys.argv[1:]
-
+def parse_args(args: List[str]) -> KomodoenvUpdateNamespace:
     ap = ArgumentParser()
     ap.add_argument(
         "--check",
@@ -452,13 +457,15 @@ def parse_args(args: List[str]):
         help="Check if this komodoenv can be updated",
     )
 
-    return ap.parse_args(args)
+    return ap.parse_args(args, namespace=KomodoenvUpdateNamespace())
 
 
-def main(args: Optional[List[str]] = None) -> None:
-    args = parse_args(args)
+def main() -> None:
+    args = parse_args(sys.argv[1:])
 
-    config = read_config()
+    # kmd_env/root/bin/komodoenv-update
+    # kmd_env/komodoenv.conf
+    config = read_config(Path(__file__).parents[2] / "komodoenv.conf")
     if not check_same_distro(config):
         return
 

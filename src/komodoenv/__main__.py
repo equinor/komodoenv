@@ -15,7 +15,21 @@ from komodoenv.creator import Creator
 from komodoenv.statfs import is_nfs
 
 
-def get_release_maturity_text(release_path):
+class KomodoenvNamespace(argparse.Namespace):
+    """
+    Komodoenv argument parser namespace
+    """
+
+    force: bool
+    release: str
+    track: str | None
+    no_update: bool
+    root: str
+    force_color: bool
+    destination: str
+
+
+def get_release_maturity_text(release_path: Path) -> str:
     """Returns a comment informing the user about the maturity of the release that
     they've chosen. Eg, warn users if they want bleeding, pat them on the back
      if they want stable, etc.
@@ -40,7 +54,7 @@ def get_release_maturity_text(release_path):
         )
 
 
-def distro_suffix():
+def distro_suffix() -> str:
     # Workaround to make tests pass on Github Actions
     if (
         "GITHUB_ACTIONS" in os.environ
@@ -56,12 +70,10 @@ def distro_suffix():
 def resolve_release(  # noqa: C901
     *,
     root: Path,
-    name: str,
+    release_path: Path,
     no_update: bool = False,
 ) -> tuple[Path, Path]:
     """Autodetect komodo release heuristically"""
-    if not (root / name / "enable").is_file():
-        sys.exit(f"'{root / name}' is not a valid komodo release")
 
     env = os.environ.copy()
     if "BASH_ENV" in env:
@@ -71,7 +83,7 @@ def resolve_release(  # noqa: C901
             [
                 "/bin/bash",
                 "-c",
-                f"source {root / name / 'enable'};which python;python --version",
+                f"source {release_path / 'enable'};which python;python --version",
             ],
             env=env,
         )
@@ -92,7 +104,7 @@ def resolve_release(  # noqa: C901
     major, minor = match.groups()
     pyver = "-py" + major + minor
 
-    base_name = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", name)
+    base_name = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", release_path.name)
     if base_name is None:
         msg = "Could not find the release."
         raise ValueError(msg)
@@ -105,7 +117,7 @@ def resolve_release(  # noqa: C901
             dir_ = root / (mode + pyver + rhver)
             track = root / (mode + pyver)
             if not (dir_ / "root").is_dir():
-                # stable-rhel7 isn't a thing. Try resolving and appending 'rhver'
+                # stable-rhel8 isn't a thing. Try resolving and appending 'rhver'
                 dir_ = (root / (mode + pyver)).resolve()
                 dir_ = dir_.parent / (dir_.name + distro_suffix())
             if not (dir_ / "root").is_dir():
@@ -120,7 +132,7 @@ def resolve_release(  # noqa: C901
     )
 
 
-def parse_args(args):
+def parse_args(args: list[str]) -> KomodoenvNamespace:
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "-f",
@@ -163,42 +175,10 @@ def parse_args(args):
     )
     ap.add_argument("destination", type=str, help="Where to create komodoenv")
 
-    args = ap.parse_args(args)
-
-    args.root = Path(args.root)
-    if not args.root.is_dir():
-        msg = "The given root is not a directory."
-        raise ValueError(msg)
-
-    if "/" in args.release:
-        args.release = Path(args.release)
-    elif isinstance(args.release, str):
-        args.release = Path(args.root) / args.release
-
-    if not args.release or not args.track:
-        args.release, args.track = resolve_release(
-            root=args.root,
-            name=str(args.release),
-            no_update=args.no_update,
-        )
-    args.track = Path(args.track)
-    args.destination = Path(args.destination).absolute()
-
-    if args.release is None or not args.release.is_dir():
-        print(
-            "Could not automatically detect active Komodo release. "
-            "Either enable a Komodo release that supports komodoenv "
-            "or specify release manually with the "
-            "`--release' argument. ",
-            sys.stderr,
-        )
-        ap.print_help()
-        sys.exit(1)
-
-    return args
+    return ap.parse_args(args, namespace=KomodoenvNamespace())
 
 
-def main(args=None):
+def main() -> None:
     texts = {
         "info": blue(
             "Info: "
@@ -212,17 +192,48 @@ def main(args=None):
         ),
     }
 
-    if args is None:
-        args = sys.argv[1:]
-    args = parse_args(args)
+    args = parse_args(sys.argv[1:])
 
-    if args.destination.is_dir() and args.force:
-        rmtree(str(args.destination), ignore_errors=True)
-    elif args.destination.is_dir():
-        sys.exit(f"Destination directory already exists: {args.destination}")
+    root = Path(args.root).resolve()
+    if not root.is_dir():
+        msg = f"The given root '{args.root}' is not a directory."
+        raise ValueError(msg)
+
+    release = root / args.release
+
+    if not (release / "enable").is_file():
+        msg = f"'{release!s}' is not a valid komodo release!"
+        raise ValueError(msg)
+
+    if not args.track:
+        release, track = resolve_release(
+            root=root,
+            release_path=release,
+            no_update=args.no_update,
+        )
+    else:
+        track = root / args.track
+        if not (release / "enable").is_file():
+            sys.exit(f"'{track!s}' is not a valid komodo release!")
+    destination = Path(args.destination).absolute()
+
+    if not release.is_dir():
+        print(
+            "Could not automatically detect active Komodo release. "
+            "Either enable a Komodo release that supports komodoenv "
+            "or specify release manually with the "
+            "`--release' argument. ",
+            sys.stderr,
+        )
+        sys.exit(1)
+
+    if destination.is_dir() and args.force:
+        rmtree(str(destination), ignore_errors=True)
+    elif destination.is_dir():
+        sys.exit(f"Destination directory already exists: {destination!s}")
 
     use_color = args.force_color or (sys.stdout.isatty() and sys.stderr.isatty())
-    release_text = get_release_maturity_text(args.track)
+    release_text = get_release_maturity_text(track)
     if not use_color:
         texts = {key: strip_color(val) for key, val in texts.items()}
         release_text = strip_color(release_text)
@@ -230,14 +241,14 @@ def main(args=None):
     print(texts["info"], file=sys.stderr)
     print(release_text, file=sys.stderr)
 
-    if not is_nfs(args.destination):
+    if not is_nfs(destination):
         print(texts["nfs"], file=sys.stderr)
 
     creator = Creator(
-        komodo_root=args.root,
-        srcpath=args.release,
-        trackpath=args.track,
-        dstpath=args.destination,
+        komodo_root=root,
+        src_path=release,
+        track_path=track,
+        dst_path=destination,
         use_color=use_color,
     )
     creator.create()

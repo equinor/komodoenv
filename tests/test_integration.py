@@ -2,6 +2,7 @@ import sys
 from subprocess import PIPE, STDOUT, Popen, check_output
 
 from komodoenv.__main__ import main as _main
+from komodoenv.update import read_config
 
 
 def bash(script):
@@ -35,7 +36,6 @@ def test_init_bash(komodo_root, tmp_path):
         "2030.01.00-py311",
         str(tmp_path / "kenv"),
     )
-
     script = """\
     source {kmd}/enable
 
@@ -129,9 +129,25 @@ def test_autodetect(komodo_root, tmp_path):
     assert bash(script) == 0
 
 
+def test_manual_tracking(komodo_root, tmp_path):
+    script = f"""\
+    source {komodo_root}/2030.01-py311/enable
+    {sys.executable} -m komodoenv --root={komodo_root} {tmp_path}/kenv --track stable
+
+    source {tmp_path}/kenv/enable
+    [[ $(which python) == "{tmp_path}/kenv/root/bin/python" ]]
+    komodoenv-update
+    """
+    assert bash(script) == 0
+    assert (
+        read_config(tmp_path / "kenv" / "komodoenv.conf")["tracked-release"] == "stable"
+    )
+
+
 def main(*args):
     """Convenience function because it looks nicer"""
-    _main(args)
+    sys.argv = ["komodoenv", *args]
+    _main()
 
 
 def _run(args, script):
