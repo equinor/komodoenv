@@ -72,6 +72,7 @@ def resolve_release(  # noqa: C901
     root: Path,
     release_path: Path,
     no_update: bool = False,
+    tracked_release: Path | None = None,
 ) -> tuple[Path, Path]:
     """Autodetect komodo release heuristically"""
 
@@ -97,6 +98,8 @@ def resolve_release(  # noqa: C901
     actual_path = Path(python_info[0]).parents[2]  # <path>/root/bin/python
     if no_update:
         return (actual_path, actual_path)
+    if tracked_release is not None:
+        return (actual_path, tracked_release)
 
     match = re.search(r"Python (\d).(\d+)", python_info[1])
     if match is None:
@@ -204,17 +207,17 @@ def main() -> None:
     if not (release / "enable").is_file():
         msg = f"'{release!s}' is not a valid komodo release!"
         raise ValueError(msg)
-
-    if not args.track:
-        release, track = resolve_release(
-            root=root,
-            release_path=release,
-            no_update=args.no_update,
-        )
-    else:
+    track = None
+    if args.track:
         track = root / args.track
         if not (release / "enable").is_file():
             sys.exit(f"'{track!s}' is not a valid komodo release!")
+    release, track = resolve_release(
+        root=root,
+        release_path=release,
+        no_update=args.no_update,
+        tracked_release=track,
+    )
     destination = Path(args.destination).absolute()
 
     if not release.is_dir():
