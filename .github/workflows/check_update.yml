@@ -1,0 +1,38 @@
+name: Check update
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+jobs:
+  check-syntax-update:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.6
+      - name: Install dependencies
+        run: |
+          pip install -U pip
+          pip install mypy
+
+      - name: Check syntax
+        run: |
+          python << EOF
+          import ast
+          import sys
+          try:
+              with open('src/komodoenv/update.py') as f:
+                  ast.parse(f.read())
+              print('Syntax check passed')
+              sys.exit(0)
+          except SyntaxError as e:
+              print(f'Syntax error: {e}')
+              sys.exit(1)
+          EOF
+          PYTHONPATH=src mypy src/komodoenv/update.py --ignore-missing-imports
