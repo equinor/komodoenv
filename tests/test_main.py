@@ -14,11 +14,17 @@ def generate_test_params_simple(rhel_version):
         (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding"),
         (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding-py3"),
         (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding-py311"),
+        (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "testing-py311", "testing"),
+        (
+            f"2025.04.01-py311-rhel{rhel_version}-numpy1",
+            "testing-py311",
+            "testing-py311",
+        ),
     ]
 
 
 @pytest.mark.parametrize(
-    "expect, track_name,name",
+    "expect, track_name, name",
     generate_test_params_simple(rhel_version()),
 )
 def test_resolve_simple(komodo_root, track_name, name, expect):
@@ -65,6 +71,10 @@ def generate_test_params_no_update(rhel_version):
         (f"bleeding-py311-rhel{rhel_version}", "bleeding"),
         (f"bleeding-py311-rhel{rhel_version}", "bleeding-py3"),
         (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311"),
+        (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "2025.04"),
+        (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "2025.04-py3"),
+        (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "2025.04-py311"),
+        (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "2025.04.01-py311"),
     ]
 
 

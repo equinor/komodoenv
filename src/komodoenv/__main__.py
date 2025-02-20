@@ -13,6 +13,7 @@ import distro
 from komodoenv.colors import blue, strip_color, yellow
 from komodoenv.creator import Creator
 from komodoenv.statfs import is_nfs
+from komodoenv.update import get_tracked_release
 
 
 def get_release_maturity_text(release_path):
@@ -91,8 +92,14 @@ def resolve_release(  # noqa: C901
         sys.exit(f"An error occurred while detecting the version of Python of '{root}'")
     major, minor = match.groups()
     pyver = "-py" + major + minor
+    path_name = name
 
-    base_name = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", name)
+    # skip last coordinate to allow custom coordinates
+    if "-" in path_name:
+        parts = name.split("-")
+        path_name = "-".join(parts[0:-1])
+
+    base_name = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", path_name)
     if base_name is None:
         msg = "Could not find the release."
         raise ValueError(msg)
@@ -100,14 +107,16 @@ def resolve_release(  # noqa: C901
 
     print(f"Looking for {name}")
 
+    distribution_suffix = distro_suffix()
     for mode in "stable", "testing", "bleeding":
-        for rhver in "", distro_suffix():
+        for rhver in "", distribution_suffix:
             dir_ = root / (mode + pyver + rhver)
             track = root / (mode + pyver)
+
             if not (dir_ / "root").is_dir():
-                # stable-rhel7 isn't a thing. Try resolving and appending 'rhver'
                 dir_ = (root / (mode + pyver)).resolve()
-                dir_ = dir_.parent / (dir_.name + distro_suffix())
+            dir_ = get_tracked_release(dir_, distribution_suffix)
+
             if not (dir_ / "root").is_dir():
                 continue
             symlink = dir_.resolve()
