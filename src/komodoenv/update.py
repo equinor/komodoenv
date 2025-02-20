@@ -301,8 +301,7 @@ def can_update(config: Dict[str, str]) -> bool:
     layout is identical, and can be safely updated with this script.
     """
     track_path = (Path(config["komodo-root"]) / config["tracked-release"]).resolve()
-    if not (track_path / "root").is_dir():
-        track_path = Path(str(track_path) + rhel_version_suffix()).resolve()
+    track_path = get_tracked_release(track_path)
     version = get_pkg_version(config, track_path / "root")
     if "komodoenv-version" not in config or version is None:
         return False
@@ -319,18 +318,47 @@ def write_config(config: Dict[str, str]):
             f.write(f"{key} = {val}\n")
 
 
+def get_tracked_release(
+    tracked_release: Path, rhel_suffix: Optional[str] = None
+) -> Path:
+    if (tracked_release / "root").is_dir():
+        return tracked_release
+
+    custom_coordinate = find_custom_coordinate(tracked_release)
+
+    if not rhel_suffix:
+        rhel_suffix = rhel_version_suffix()
+
+    tracked_release = Path(str(tracked_release) + rhel_suffix).resolve()
+
+    if (tracked_release / "root").is_dir():
+        return tracked_release
+
+    return Path(str(tracked_release) + custom_coordinate).resolve()
+
+
+def find_custom_coordinate(release_path: Path) -> str:
+    if (release_path / "enable").is_file():
+        with open(release_path / "enable", "r") as file:
+            for line in file:
+                if "CUSTOM_COORDINATE=" in line:
+                    custom_coordinate_value = (
+                        line.strip().split("CUSTOM_COORDINATE=")[1].strip('"')
+                    )
+                    return "-" + custom_coordinate_value
+    return ""
+
+
 def current_track(config: Dict[str, str]) -> Dict[str, str]:
     path = Path(config["komodo-root"]) / config["tracked-release"]
 
-    tracked_release = path.resolve()
+    tracked_release = get_tracked_release(path.resolve())
     if not (tracked_release / "root").is_dir():
-        tracked_release = Path(str(tracked_release) + rhel_version_suffix()).resolve()
-        if not (tracked_release / "root").is_dir():
-            print(
-                f"Not able to find the tracked komodo release {config['tracked-release']}. Will not update.",
-                file=sys.stderr,
-            )
-            sys.exit(0)
+        print(
+            f"Not able to find the tracked komodo release {config['tracked-release']}. Will not update.",
+            file=sys.stderr,
+        )
+        sys.exit(0)
     st = path.stat()
 
     return {
