@@ -8,6 +8,8 @@ from subprocess import check_output
 
 import pytest
 
+KOMODO_TIMESTAMP = "-20250225-1209"
+
 
 def rhel_version():
     return "7" if ".el7" in platform.release() else "8"
@@ -38,7 +40,10 @@ def komodo_root(tmp_path_factory, python311_path):
     _install(python311_path, path / "2030.01.01-py311", ["numpy==1.26.4"])
     _install(python311_path, path / "2030.02.00-py311")
     _install(python311_path, path / "2030.03.00-py311-rhel9")
-    _install(python311_path, path / f"bleeding-py311-rhel{rhel_version()}")
+    _install(
+        python311_path,
+        path / f"bleeding{KOMODO_TIMESTAMP}-py311-rhel{rhel_version()}-numpy1",
+    )
     _install(python311_path, path / f"2025.04.01-py311-rhel{rhel_version()}-numpy1")
 
     for chain in (
@@ -51,7 +56,12 @@ def komodo_root(tmp_path_factory, python311_path):
         # Testing points to py311, rhel8, numpy1
         ("testing", "testing-py3", "testing-py311", "2025.04-py311"),
         # Bleeding points to py311, rhel8
-        ("bleeding", "bleeding-py3", "bleeding-py311"),
+        (
+            "bleeding",
+            "bleeding-py3",
+            "bleeding-py311",
+            f"bleeding{KOMODO_TIMESTAMP}-py311",
+        ),
     ):
         for src, dst in itertools.pairwise(chain):
             (path / src).symlink_to(dst)
@@ -86,7 +96,7 @@ def _install(python: str, path: Path, packages=None):
     if optional_custom_coordinate and not any(
         optional_custom_coordinate.startswith(substring) for substring in ["py", "rhel"]
     ):
-        custom_coordinate = optional_custom_coordinate
+        custom_coordinate = "-" + optional_custom_coordinate
 
     if match is not None:
         p = path.parent / match[1]

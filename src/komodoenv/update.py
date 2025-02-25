@@ -321,8 +321,10 @@ def write_config(config: Dict[str, str]):
 def get_tracked_release(
     tracked_release: Path, rhel_suffix: Optional[str] = None
 ) -> Path:
-    if (tracked_release / "root").is_dir():
-        return tracked_release
+    abs_path = Path(tracked_release).resolve()
+
+    if (abs_path / "root").is_dir():
+        return abs_path
 
     custom_coordinate = find_custom_coordinate(tracked_release)
 
@@ -343,7 +345,10 @@ def find_custom_coordinate(release_path: Path) -> str:
             for line in file:
                 if "CUSTOM_COORDINATE=" in line:
                     custom_coordinate_value = (
-                        line.strip().split("CUSTOM_COORDINATE=")[1].strip('"')
+                        line.strip()
+                        .split("CUSTOM_COORDINATE=")[1]
+                        .strip('"')
+                        .strip("-")
                     )
                     return "-" + custom_coordinate_value
     return ""
