@@ -85,43 +85,28 @@ def resolve_release(  # noqa: C901
         raise RuntimeError(msg)
     actual_path = Path(python_info[0]).parents[2]  # <path>/root/bin/python
     if no_update:
-        return (actual_path, actual_path)
+        return actual_path, actual_path
 
     match = re.search(r"Python (\d).(\d+)", python_info[1])
     if match is None:
         sys.exit(f"An error occurred while detecting the version of Python of '{root}'")
     major, minor = match.groups()
     pyver = "-py" + major + minor
-    path_name = name
-
-    # skip last coordinate to allow custom coordinates
-    if "-" in path_name:
-        parts = name.split("-")
-        path_name = "-".join(parts[0:-1])
-
-    base_name = re.match("^(.*?)(?:-py[0-9]+)?(?:-rhel[0-9]+)?$", path_name)
-    if base_name is None:
-        msg = "Could not find the release."
-        raise ValueError(msg)
-    name = base_name[1] + pyver
-
-    print(f"Looking for {name}")
-
     distribution_suffix = distro_suffix()
+
     for mode in "stable", "testing", "bleeding":
         for rhver in "", distribution_suffix:
-            dir_ = root / (mode + pyver + rhver)
             track = root / (mode + pyver)
+            dir_ = (root / (mode + pyver + rhver)).resolve()
 
             if not (dir_ / "root").is_dir():
                 dir_ = (root / (mode + pyver)).resolve()
             dir_ = get_tracked_release(dir_, distribution_suffix)
 
-            if not (dir_ / "root").is_dir():
-                continue
-            symlink = dir_.resolve()
-            if symlink.name == actual_path.name:
-                return (symlink, track)
+            if (dir_ / "root").is_dir():
+                symlink = dir_.resolve()
+                if symlink.name == actual_path.name:
+                    return symlink, track
 
     sys.exit(
         "Could not automatically detect an appropriate Komodo release to track (one of: stable, testing, bleeding).\n"

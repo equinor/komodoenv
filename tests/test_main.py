@@ -1,7 +1,7 @@
 import pytest
 
 import komodoenv.__main__ as main
-from tests.conftest import rhel_version
+from tests.conftest import KOMODO_TIMESTAMP, rhel_version
 
 
 def generate_test_params_simple(rhel_version):
@@ -11,9 +11,21 @@ def generate_test_params_simple(rhel_version):
         ("2030.01.00-py311", "stable-py311", "stable-py311"),
         ("2030.01.00-py311", "stable-py311", "2030.01"),
         ("2030.01.00-py311", "stable-py311", "2030.01.00-py311"),
-        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding"),
-        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding-py3"),
-        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311", "bleeding-py311"),
+        (
+            f"bleeding{KOMODO_TIMESTAMP}-py311-rhel{rhel_version}-numpy1",
+            "bleeding-py311",
+            "bleeding",
+        ),
+        (
+            f"bleeding{KOMODO_TIMESTAMP}-py311-rhel{rhel_version}-numpy1",
+            "bleeding-py311",
+            "bleeding-py3",
+        ),
+        (
+            f"bleeding{KOMODO_TIMESTAMP}-py311-rhel{rhel_version}-numpy1",
+            "bleeding-py311",
+            "bleeding-py311",
+        ),
         (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "testing-py311", "testing"),
         (
             f"2025.04.01-py311-rhel{rhel_version}-numpy1",
@@ -68,9 +80,12 @@ def generate_test_params_no_update(rhel_version):
         ("2030.01.00-py311", "2030.01"),
         ("2030.01.00-py311", "2030.01.00-py311"),
         ("2030.01.01-py311", "2030.01.01-py311"),
-        (f"bleeding-py311-rhel{rhel_version}", "bleeding"),
-        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py3"),
-        (f"bleeding-py311-rhel{rhel_version}", "bleeding-py311"),
+        (f"bleeding{KOMODO_TIMESTAMP}-py311-rhel{rhel_version}-numpy1", "bleeding"),
+        (f"bleeding{KOMODO_TIMESTAMP}-py311-rhel{rhel_version}-numpy1", "bleeding-py3"),
+        (
+            f"bleeding{KOMODO_TIMESTAMP}-py311-rhel{rhel_version}-numpy1",
+            "bleeding-py311",
+        ),
         (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "2025.04"),
         (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "2025.04-py3"),
         (f"2025.04.01-py311-rhel{rhel_version}-numpy1", "2025.04-py311"),
