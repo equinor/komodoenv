@@ -321,22 +321,31 @@ def write_config(config: Dict[str, str]):
 def get_tracked_release(
     tracked_release: Path, rhel_suffix: Optional[str] = None
 ) -> Path:
-    abs_path = Path(tracked_release).resolve()
-
-    if (abs_path / "root").is_dir():
-        return abs_path
-
-    custom_coordinate = find_custom_coordinate(tracked_release)
-
     if not rhel_suffix:
         rhel_suffix = rhel_version_suffix()
 
-    tracked_release = Path(str(tracked_release) + rhel_suffix).resolve()
+    custom_coordinate = find_custom_coordinate(tracked_release)
+    detected_python_version = ""
+    parts = Path(tracked_release).name.split("-")
+    abs_path = Path(tracked_release).parent
+    base_release = f"{abs_path}/{parts[0]}"
+    for p in parts:
+        if re.match(r"^(?:\d{8}|\d{4})$", p):
+            base_release += f"-{p}"
+        elif p.startswith("py"):
+            detected_python_version = f"-{p}"
 
-    if (tracked_release / "root").is_dir():
-        return tracked_release
+    for rp in [
+        f"{base_release}{detected_python_version}{rhel_suffix}{custom_coordinate}",
+        f"{base_release}{detected_python_version}{rhel_suffix}",
+        f"{base_release}{detected_python_version}{custom_coordinate}",
+        f"{base_release}{detected_python_version}",
+    ]:
+        possible_root_release = Path(rp).resolve()
+        if (possible_root_release / "root").is_dir():
+            return possible_root_release
 
-    return Path(str(tracked_release) + custom_coordinate).resolve()
+    return Path()
 
 
 def find_custom_coordinate(release_path: Path) -> str:
