@@ -54,7 +54,7 @@ def distro_suffix():
     return f"-rhel{distro.major_version()}"
 
 
-def resolve_release(
+def resolve_release(  # noqa: C901
     *,
     root: Path,
     name: str,
@@ -95,15 +95,18 @@ def resolve_release(
     distribution_suffix = distro_suffix()
 
     for mode in "stable", "testing", "bleeding":
-        track = root / (mode + pyver)
-        dir_ = get_tracked_release(
-            (root / (mode + pyver)).resolve(), distribution_suffix
-        )
+        for rhver in "", distribution_suffix:
+            track = root / (mode + pyver)
+            dir_ = (root / (mode + pyver + rhver)).resolve()
 
-        if (dir_ / "root").is_dir():
-            symlink = dir_.resolve()
-            if symlink.name == actual_path.name:
-                return symlink, track
+            if not (dir_ / "root").is_dir():
+                dir_ = (root / (mode + pyver)).resolve()
+            dir_ = get_tracked_release(dir_, distribution_suffix)
+
+            if (dir_ / "root").is_dir():
+                symlink = dir_.resolve()
+                if symlink.name == actual_path.name:
+                    return symlink, track
 
     sys.exit(
         "Could not automatically detect an appropriate Komodo release to track (one of: stable, testing, bleeding).\n"
