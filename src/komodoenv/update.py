@@ -360,6 +360,13 @@ def find_custom_coordinate(release_path: Path) -> str:
                         .strip("-")
                     )
                     return "-" + custom_coordinate_value
+
+    parts = release_path.name.split("-")
+    possible_custom_coordinate = parts[-1]
+    if len(parts) > 1 and not any(
+        possible_custom_coordinate.startswith(token) for token in ("py", "rhel")
+    ):
+        return f"-{possible_custom_coordinate}"
     return ""
 
 
