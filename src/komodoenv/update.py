@@ -314,8 +314,7 @@ def can_update(config: Dict[str, str]) -> bool:
 
 def write_config(config: Dict[str, str]):
     with open(Path(__file__).parents[2] / "komodoenv.conf", "w", encoding="utf-8") as f:
-        for key, val in config.items():
-            f.write(f"{key} = {val}\n")
+        f.writelines(f"{key} = {val}\n" for key, val in config.items())
 
 
 def get_tracked_release(
@@ -474,19 +473,40 @@ def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
     # remove the old _komodo.pth.
     with contextlib.suppress(FileNotFoundError):
         (path / "_komodo.pth").unlink()
-    new_style_pth = path / "zzz_komodo.pth"
-    with open(new_style_pth, "w", encoding="utf-8") as f:
-        for lib in "lib64", "lib":
-            f.write(
-                str(
-                    srcpath
-                    / "root"
-                    / lib
-                    / ("python" + config["python-version"])
-                    / "site-packages",
-                )
-                + "\n",
+
+    python_paths = [
+        f"{srcpath}/root/{lib}/python{config['python-version']}/site-packages"
+        for lib in ("lib64", "lib")
+    ]
+
+    with open(path / "zzz_komodo_finder.py", "w", encoding="utf-8") as f:
+        f.write(
+            dedent(
+                f"""\
+                import sys
+                from importlib.machinery import PathFinder
+
+                KOMODO_PATHS = {python_paths!r}
+
+                class KomodoFallbackFinder:
+                    @classmethod
+                    def find_spec(cls, fullname, path=None, target=None):
+                        spec = PathFinder.find_spec(fullname, KOMODO_PATHS)
+                        if spec:
+                            return spec
+                        return None
+
+                def install():
+                    if not any(isinstance(f, KomodoFallbackFinder) for f in sys.meta_path):
+                        sys.meta_path.append(KomodoFallbackFinder())
+                """
             )
+        )
+    # We use zzz_komodo.pth to try and make it the last .pth file to be processed
+    # alphabetically, and thus allowing for other editable installs to 'overwrite'
+    # komodo packages.
+    with open(path / "zzz_komodo.pth", "w", encoding="utf-8") as f:
+        f.write("import zzz_komodo_finder; zzz_komodo_finder.install()")
 
 
 def parse_args(args: List[str]):

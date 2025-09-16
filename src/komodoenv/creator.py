@@ -132,13 +132,38 @@ class Creator:
             pth for pth in self.srcpy.site_paths if pth.startswith(str(self.srcpath))
         ]
 
+        with self.create_file(
+            Path("root") / self.dstpy.site_packages_path / "zzz_komodo_finder.py",
+        ) as f:
+            f.write(
+                dedent(
+                    f"""\
+                    import sys
+                    from importlib.machinery import PathFinder
+
+                    KOMODO_PATHS = {python_paths!r}
+
+                    class KomodoFallbackFinder:
+                        @classmethod
+                        def find_spec(cls, fullname, path=None, target=None):
+                            spec = PathFinder.find_spec(fullname, KOMODO_PATHS)
+                            if spec:
+                                return spec
+                            return None
+
+                    def install():
+                        if not any(isinstance(f, KomodoFallbackFinder) for f in sys.meta_path):
+                            sys.meta_path.append(KomodoFallbackFinder())
+                    """
+                )
+            )
         # We use zzz_komodo.pth to try and make it the last .pth file to be processed
         # alphabetically, and thus allowing for other editable installs to 'overwrite'
         # komodo packages.
         with self.create_file(
             Path("root") / self.dstpy.site_packages_path / "zzz_komodo.pth",
         ) as f:
-            print("\n".join(python_paths), file=f)
+            f.write("import zzz_komodo_finder; zzz_komodo_finder.install()")
 
         # Create & run komodo-update
         with (
