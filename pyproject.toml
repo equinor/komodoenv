@@ -54,7 +54,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S108", "ANN", "PT006"]
+"tests/*" = ["S101", "S108", "ANN", "PT006", "PLC0415"]
 "src/komodoenv/update.py" = ["FA102", "FA100", "UP"]
 
 [tool.ruff.lint.pylint]
