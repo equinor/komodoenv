@@ -136,9 +136,9 @@ class Creator:
         # alphabetically, and thus allowing for other editable installs to 'overwrite'
         # komodo packages.
         with self.create_file(
-            Path("root") / self.dstpy.site_packages_path / "zzz_komodo.pth",
+            self.dstpy.site_packages_path / "zzz_komodo.pth",
         ) as f:
-            print("\n".join(python_paths), file=f)
+            f.write("\n".join(python_paths) + "\n")
 
         # Create & run komodo-update
         with (
