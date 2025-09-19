@@ -314,8 +314,7 @@ def can_update(config: Dict[str, str]) -> bool:
 
 def write_config(config: Dict[str, str]):
     with open(Path(__file__).parents[2] / "komodoenv.conf", "w", encoding="utf-8") as f:
-        for key, val in config.items():
-            f.write(f"{key} = {val}\n")
+        f.writelines(f"{key} = {val}\n" for key, val in config.items())
 
 
 def get_tracked_release(
@@ -476,7 +475,7 @@ def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
         (path / "_komodo.pth").unlink()
     new_style_pth = path / "zzz_komodo.pth"
     with open(new_style_pth, "w", encoding="utf-8") as f:
-        for lib in "lib64", "lib":
+        for lib in "lib64", "lib":  # noqa: FURB122
             f.write(
                 str(
                     srcpath
