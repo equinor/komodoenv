@@ -195,6 +195,9 @@ def main(args=None):
             "Info: "
             "If you encounter issues with the Jupyter environment or the 'rips' package, try "
             "running 'komodoenv-update' or sourcing the komodoenv again.\n"
+            "Only legacy editable installs are supported for packages that are also present in komodo. "
+            "Enforce this when installing with pip by running:\n"
+            "    pip install --config-settings editable_mode=compat <package-name>\n"
         ),
         "nfs": yellow(
             "Warning: Komodoenv target directory is not located on an NFS "
