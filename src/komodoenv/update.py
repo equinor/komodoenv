@@ -186,9 +186,7 @@ def read_config() -> Dict[str, str]:
             config[key] = val
 
     if "komodo-root" not in config:
-        config["komodo-root"] = (
-            "prog/komodo" if Path("/prog/komodo").is_dir() else "/prog/res/komodo"
-        )
+        config["komodo-root"] = "/prog/res/komodo"
 
     return config
 
