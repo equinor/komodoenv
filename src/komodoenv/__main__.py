@@ -143,8 +143,8 @@ def parse_args(args):
     ap.add_argument(
         "--root",
         type=str,
-        default="/prog/komodo" if Path("/prog/komodo").is_dir() else "/prog/res/komodo",
-        help="Absolute path to komodo root (default: /prog/res/komodo for Onprem, /prog/komodo for Azure)",
+        default="/prog/res/komodo",
+        help="Absolute path to komodo root (default: /prog/res/komodo)",
     )
     ap.add_argument(
         "--force-color",
