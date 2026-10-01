@@ -21,9 +21,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pip
-          pip install ruff
+          pip install pre-commit
 
-      - name: Run ruff
+      - name: Run pre-commit
         run: |
-          ruff check
-          ruff format --check
+          pre-commit run --all-files --show-diff-on-failure
