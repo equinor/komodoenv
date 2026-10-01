@@ -12,7 +12,7 @@ requires-python = ">=3.10"
 dynamic = ["version"]
 license = { text = "GPL-3.0" }
 dependencies = [
-  "distro", 
+  "distro",
   "PyYAML"
 ]
 
