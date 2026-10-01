@@ -52,4 +52,3 @@ install pytest`. To run tests:
 ``` bash
 pytest tests/
 ```
-
