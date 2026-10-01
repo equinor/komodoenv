@@ -39,6 +39,7 @@ select = [
 
 ignore = [
           "ANN",  # flake8-annotations
+          "CPY",  # copyright
           "COM812",  # missing-trailing-comma (conflict ruff formatter)
           "D",  # pydocstyle
           "E501",  # line-too-long
