@@ -29,6 +29,19 @@ write_to = "src/komodoenv/_version.py"
 [project.scripts]
 komodoenv = "komodoenv.__main__:main"
 
+[dependency-groups]
+style = [
+    "pre-commit",
+]
+test = [
+    "pip",  # test_get_pkg_version expects pip in the venv
+    "pytest",
+]
+
+[tool.uv]
+fork-strategy = "requires-python"
+exclude-newer = "7 days"
+
 [tool.ruff]
 src = ["src"]
 line-length = 88
