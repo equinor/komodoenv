@@ -16,17 +16,17 @@ def rhel_version():
 
 
 @pytest.fixture(scope="session")
-def python311_path():
-    """Locate Python 3.11 executable"""
-    for exe in "/usr/bin/python3.11", str(shutil.which("python3.11")):
+def python312_path():
+    """Locate Python 3.12 executable"""
+    for exe in "/usr/bin/python3.12", str(shutil.which("python3.12")):
         if Path(exe).is_file():
             return exe
-    msg = "Could not locate python3.11"
+    msg = "Could not locate python3.12"
     raise RuntimeError(msg)
 
 
 @pytest.fixture(scope="session")
-def komodo_root(tmp_path_factory, python311_path):
+def komodo_root(tmp_path_factory, python312_path):
     """Komodo mock environment"""
     # It takes forever to generate the virtualenvs. Let the developer set this
     # environment variable to reuse a previously-bootstrapped komodo root.
@@ -36,31 +36,31 @@ def komodo_root(tmp_path_factory, python311_path):
     path = tmp_path_factory.mktemp("prog-res-komodo")
 
     # Install and configure pythons
-    _install(python311_path, path / "2030.01.00-py311", ["numpy==1.25.2"])
-    _install(python311_path, path / "2030.01.01-py311", ["numpy==1.26.4"])
-    _install(python311_path, path / "2030.02.00-py311")
-    _install(python311_path, path / "2030.03.00-py311-rhel9")
+    _install(python312_path, path / "2030.01.00-py312", ["numpy==1.26.0"])
+    _install(python312_path, path / "2030.01.01-py312", ["numpy==1.26.4"])
+    _install(python312_path, path / "2030.02.00-py312")
+    _install(python312_path, path / "2030.03.00-py312-rhel9")
     _install(
-        python311_path,
-        path / f"bleeding{KOMODO_TIMESTAMP}-py311-rhel{rhel_version()}-numpy1",
+        python312_path,
+        path / f"bleeding{KOMODO_TIMESTAMP}-py312-rhel{rhel_version()}-numpy1",
     )
-    _install(python311_path, path / f"2025.04.01-py311-rhel{rhel_version()}-numpy1")
+    _install(python312_path, path / f"2025.04.01-py312-rhel{rhel_version()}-numpy1")
 
     for chain in (
-        ("2030.01", "2030.01-py3", "2030.01-py311", "2030.01.00-py311"),
-        ("2030.02", "2030.02-py3", "2030.02-py311", "2030.02.00-py311"),
-        ("2030.03", "2030.03-py3", "2030.03-py311", "2030.03.00-py311"),
-        ("2025.04", "2025.04-py3", "2025.04-py311", "2025.04.01-py311"),
-        # Stable points to py311, unspecified-rhel
-        ("stable", "stable-py3", "stable-py311", "2030.01-py311"),
-        # Testing points to py311, rhel8, numpy1
-        ("testing", "testing-py3", "testing-py311", "2025.04-py311"),
-        # Bleeding points to py311, rhel8
+        ("2030.01", "2030.01-py3", "2030.01-py312", "2030.01.00-py312"),
+        ("2030.02", "2030.02-py3", "2030.02-py312", "2030.02.00-py312"),
+        ("2030.03", "2030.03-py3", "2030.03-py312", "2030.03.00-py312"),
+        ("2025.04", "2025.04-py3", "2025.04-py312", "2025.04.01-py312"),
+        # Stable points to py312, unspecified-rhel
+        ("stable", "stable-py3", "stable-py312", "2030.01-py312"),
+        # Testing points to py312, rhel8, numpy1
+        ("testing", "testing-py3", "testing-py312", "2025.04-py312"),
+        # Bleeding points to py312, rhel8
         (
             "bleeding",
             "bleeding-py3",
-            "bleeding-py311",
-            f"bleeding{KOMODO_TIMESTAMP}-py311",
+            "bleeding-py312",
+            f"bleeding{KOMODO_TIMESTAMP}-py312",
         ),
     ):
         for src, dst in itertools.pairwise(chain):

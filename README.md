@@ -43,7 +43,7 @@ release packages.
 Komodoenv is meant to be part of a [komodo](https://github.com/equinor/komodo)
 release. As such, it is not meant to be installed by users directly.
 
-This project requires Python 3.8 or newer. Then, install this project with `pip install .`
+This project requires Python 3.12 or newer. Then, install this project with `pip install .`
 
 ### Testing
 Komodoenv uses `pytest` for test running. Ensure that it's installed with `pip
