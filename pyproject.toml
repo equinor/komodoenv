@@ -31,6 +31,7 @@ komodoenv = "komodoenv.__main__:main"
 
 [dependency-groups]
 style = [
+    "mypy",
     "pre-commit",
 ]
 test = [
@@ -41,6 +42,14 @@ test = [
 [tool.uv]
 fork-strategy = "requires-python"
 exclude-newer = "7 days"
+
+[tool.mypy]
+files = ["src"]
+python_version = "3.12"
+platform = "linux"
+check_untyped_defs = true
+disallow_untyped_defs = true
+warn_unused_ignores = true
 
 [tool.ruff]
 src = ["src"]

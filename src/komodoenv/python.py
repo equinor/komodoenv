@@ -1,11 +1,14 @@
 import json
 import os
+from collections.abc import Sequence
 from pathlib import Path
 from subprocess import PIPE, Popen
 
 
 class Python:
-    def __init__(self, executable, komodo_prefix=None):
+    def __init__(
+        self, executable: str | Path, komodo_prefix: str | Path | None = None
+    ) -> None:
         """"""
         self.executable = Path(executable)
 
@@ -16,14 +19,15 @@ class Python:
             self.komodo_prefix = self.executable.parent.parent
 
         self.root = self.executable.parent.parent
-        self.version_info = None
+        self.version_info: tuple[int, int, int, str, int]
+        self.site_paths: list[str]
 
-    def make_dst(self, executable):
+    def make_dst(self, executable: str | Path) -> "Python":
         py = Python(executable, self.komodo_prefix)
         py.version_info = self.version_info
         return py
 
-    def detect(self):
+    def detect(self) -> None:
         """Detects what type of Python installation this is"""
         # Get python version_info
         script = b"import sys,json;print(json.dumps(sys.version_info[:]))"
@@ -37,10 +41,19 @@ class Python:
         self.site_paths = json.loads(self.call(script=script, env=env))
 
     @property
-    def site_packages_path(self):
-        return self.root / "lib/python{}.{}/site-packages".format(*self.version_info)
+    def version(self) -> str:
+        return f"{self.version_info[0]}.{self.version_info[1]}"
 
-    def call(self, args=None, env=None, script=None):
+    @property
+    def site_packages_path(self) -> Path:
+        return self.root / f"lib/python{self.version}/site-packages"
+
+    def call(
+        self,
+        args: Sequence[str | Path] | None = None,
+        env: dict[str, str] | None = None,
+        script: bytes | None = None,
+    ) -> bytes:
         if args is None:
             args = []
         if env is None:
@@ -53,7 +66,7 @@ class Python:
         env["LD_LIBRARY_PATH"] = f"{self.komodo_prefix}/lib64:{self.komodo_prefix}/lib"
 
         args = [self.executable, *args]
-        proc = Popen(map(str, args), stdin=PIPE, stdout=PIPE, env=env)
+        proc = Popen([str(arg) for arg in args], stdin=PIPE, stdout=PIPE, env=env)
         stdout, _ = proc.communicate(script)
 
         return stdout

@@ -37,3 +37,7 @@ jobs:
         run: |
           # no-commit-to-branch would fail on pushes to main
           SKIP=no-commit-to-branch uv run pre-commit run --all-files --show-diff-on-failure
+
+      - name: Run type check
+        run: |
+          uv run mypy

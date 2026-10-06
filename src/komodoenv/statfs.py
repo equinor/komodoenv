@@ -36,7 +36,7 @@ class _Statfs(Structure):
     )
 
 
-def _test_fs_type(path, f_type):
+def _test_fs_type(path: str | Path, f_type: int) -> bool | None:
     if sys.platform != "linux":
         return None
 
@@ -52,11 +52,11 @@ def _test_fs_type(path, f_type):
     return stat.f_type == f_type
 
 
-def is_tmpfs(path):
+def is_tmpfs(path: str | Path) -> bool | None:
     """Test if `path` is on a `tmpfs` filesystem."""
     return _test_fs_type(path, _TMPFS_MAGIC)
 
 
-def is_nfs(path):
+def is_nfs(path: str | Path) -> bool | None:
     """Test if `path` is on a `nfs` filesystem."""
     return _test_fs_type(path, _NFS_SUPER_MAGIC)
