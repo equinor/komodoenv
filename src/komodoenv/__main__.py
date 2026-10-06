@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 import argparse
 import os
 import re
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from shutil import rmtree
 
@@ -16,7 +15,17 @@ from komodoenv.statfs import is_nfs
 from komodoenv.update import get_tracked_release
 
 
-def get_release_maturity_text(release_path):
+class KomodoenvNamespace(argparse.Namespace):
+    force: bool
+    release: Path
+    track: Path
+    no_update: bool
+    root: Path
+    force_color: bool
+    destination: Path
+
+
+def get_release_maturity_text(release_path: Path) -> str:
     """Returns a comment informing the user about the maturity of the release that
     they've chosen. Eg, warn users if they want bleeding, pat them on the back
      if they want stable, etc.
@@ -41,7 +50,7 @@ def get_release_maturity_text(release_path):
         )
 
 
-def distro_suffix():
+def distro_suffix() -> str:
     # Workaround to make tests pass on Github Actions
     if (
         "GITHUB_ACTIONS" in os.environ
@@ -111,7 +120,7 @@ def resolve_release(
     )
 
 
-def parse_args(args):
+def parse_args(argv: Sequence[str] | None) -> KomodoenvNamespace:
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "-f",
@@ -154,7 +163,7 @@ def parse_args(args):
     )
     ap.add_argument("destination", type=str, help="Where to create komodoenv")
 
-    args = ap.parse_args(args)
+    args = ap.parse_args(argv)
 
     args.root = Path(args.root)
     if not args.root.is_dir():
@@ -186,10 +195,10 @@ def parse_args(args):
         ap.print_help()
         sys.exit(1)
 
-    return args
+    return KomodoenvNamespace(**vars(args))
 
 
-def main(args=None):
+def main(args: Sequence[str] | None = None) -> None:
     texts = {
         "info": blue(
             "Info: "
@@ -208,15 +217,15 @@ def main(args=None):
 
     if args is None:
         args = sys.argv[1:]
-    args = parse_args(args)
+    options = parse_args(args)
 
-    if args.destination.is_dir() and args.force:
-        rmtree(str(args.destination), ignore_errors=True)
-    elif args.destination.is_dir():
-        sys.exit(f"Destination directory already exists: {args.destination}")
+    if options.destination.is_dir() and options.force:
+        rmtree(str(options.destination), ignore_errors=True)
+    elif options.destination.is_dir():
+        sys.exit(f"Destination directory already exists: {options.destination}")
 
-    use_color = args.force_color or (sys.stdout.isatty() and sys.stderr.isatty())
-    release_text = get_release_maturity_text(args.track)
+    use_color = options.force_color or (sys.stdout.isatty() and sys.stderr.isatty())
+    release_text = get_release_maturity_text(options.track)
     if not use_color:
         texts = {key: strip_color(val) for key, val in texts.items()}
         release_text = strip_color(release_text)
@@ -224,14 +233,14 @@ def main(args=None):
     print(texts["info"], file=sys.stderr)
     print(release_text, file=sys.stderr)
 
-    if not is_nfs(args.destination):
+    if not is_nfs(options.destination):
         print(texts["nfs"], file=sys.stderr)
 
     creator = Creator(
-        komodo_root=args.root,
-        srcpath=args.release,
-        trackpath=args.track,
-        dstpath=args.destination,
+        komodo_root=options.root,
+        srcpath=options.release,
+        trackpath=options.track,
+        dstpath=options.destination,
         use_color=use_color,
     )
     creator.create()

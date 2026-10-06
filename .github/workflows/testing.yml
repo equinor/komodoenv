@@ -13,6 +13,19 @@ env:
   UV_FROZEN: true
 
 jobs:
+  updater-compatibility:
+    name: "Standalone updater (Python 3.6)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Check standalone updater
+        run: |
+          docker run --rm --network none \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/work,readonly" \
+            --workdir /work \
+            python:3.6.15-slim-buster@sha256:e10aa83604948c6d8d9f72a9a20193d84bb2dbe550b725eb5208387117fde065 \
+            python -I -S -B tests/test_update_compatibility.py
+
   tests:
     name: "Python ${{ matrix.python-version }}"
     runs-on: ubuntu-latest

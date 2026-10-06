@@ -52,3 +52,15 @@ install pytest`. To run tests:
 ``` bash
 pytest tests/
 ```
+
+### Static checks
+Install the development tools with `uv sync --group style`, then run:
+
+```bash
+uv run pre-commit run --all-files
+uv run mypy
+```
+
+Type checking targets Linux and covers `src/`. The standalone
+`src/komodoenv/update.py` script must remain compatible with the system Python 3.6
+on RHEL8, independently of the package's Python requirement.

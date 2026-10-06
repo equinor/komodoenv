@@ -1,9 +1,11 @@
 import os
 import subprocess
-from contextlib import contextmanager
+from collections.abc import Iterator
+from contextlib import AbstractContextManager, contextmanager
 from importlib.metadata import distribution
 from pathlib import Path
 from textwrap import dedent
+from typing import IO
 
 import distro
 
@@ -13,7 +15,9 @@ from komodoenv.python import Python
 
 
 @contextmanager
-def open_chmod(path: Path, mode: str = "w", file_mode=0o644):
+def open_chmod(
+    path: Path, mode: str = "w", file_mode: int = 0o644
+) -> Iterator[IO[str]]:
     with open(path, mode, encoding="utf-8") as file:
         yield file
     path.chmod(file_mode)
@@ -25,12 +29,12 @@ class Creator:
     def __init__(
         self,
         *,
-        komodo_root,
-        srcpath,
-        trackpath,
-        dstpath=None,
-        use_color=False,
-    ):
+        komodo_root: Path,
+        srcpath: Path,
+        trackpath: Path,
+        dstpath: Path,
+        use_color: bool = False,
+    ) -> None:
         if not use_color:
             self._fmt_action = strip_color(self._fmt_action)
 
@@ -44,34 +48,33 @@ class Creator:
 
         self.dstpy = self.srcpy.make_dst(dstpath / "root/bin/python")
 
-    def print_action(self, action, message):
+    def print_action(self, action: str, message: str | Path) -> None:
         print(self._fmt_action.format(action=action, message=message))
 
-    def mkdir(self, path):
+    def mkdir(self, path: str) -> None:
         self.print_action("mkdir", path + "/")
         (self.dstpath / path).mkdir()
 
-    def create_file(self, path, file_mode=0o644):
+    def create_file(
+        self, path: str | Path, file_mode: int = 0o644
+    ) -> AbstractContextManager[IO[str]]:
         self.print_action("create", path)
         return open_chmod(self.dstpath / path, file_mode=file_mode)
 
-    def remove_file(self, path):
+    def remove_file(self, path: str | Path) -> None:
         if not (self.dstpath / path).is_file():
             return
 
         self.print_action("remove", path)
         (self.dstpath / path).unlink()
 
-    def venv(self):
+    def venv(self) -> None:
         self.print_action("venv", f"using {self.srcpy.executable}")
 
         env = {"LD_LIBRARY_PATH": str(self.srcpath / "root" / "lib"), **os.environ}
         subprocess.check_output(
             [
-                str(self.srcpy.executable)
-                + str(self.srcpy.version_info[0])
-                + "."
-                + str(self.srcpy.version_info[1]),
+                f"{self.srcpy.executable}{self.srcpy.version}",
                 "-m",
                 "venv",
                 "--copies",
@@ -81,7 +84,7 @@ class Creator:
             env=env,
         )
 
-    def run(self, path):
+    def run(self, path: str | Path) -> None:
         self.print_action("run", path)
         subprocess.check_output([str(self.dstpath / path)])
 
@@ -91,7 +94,7 @@ class Creator:
         self.print_action("install", package)
 
         env = os.environ.copy()
-        env["PYTHONPATH"] = pip_wheel
+        env["PYTHONPATH"] = str(pip_wheel)
 
         subprocess.check_output(
             [
@@ -107,7 +110,7 @@ class Creator:
             env=env,
         )
 
-    def create(self):
+    def create(self) -> None:
         self.dstpath.mkdir()
 
         self.venv()
@@ -120,7 +123,7 @@ class Creator:
                 current-release = {self.srcpath.name}
                 tracked-release = {self.trackpath.name}
                 mtime-release = 0
-                python-version = {self.srcpy.version_info[0]}.{self.srcpy.version_info[1]}
+                python-version = {self.srcpy.version}
                 komodoenv-version = {distribution("komodoenv").version}
                 komodo-root = {self.komodo_root}
                 linux-dist = {distro.id() + distro.version_parts()[0]}

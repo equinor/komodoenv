@@ -14,14 +14,18 @@ import re
 import shutil
 import subprocess
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 try:
     from distro import id as distro_id
-    from distro import version_parts as distro_versions
+    from distro import version_parts
+
+    def distro_versions() -> Tuple[str, str, str]:
+        return version_parts()
+
 except ImportError:
     # The 'distro' package isn't installed.
     #
@@ -40,6 +44,10 @@ except ImportError:
 
     else:
         sys.stderr.write("Warning: komodoenv is only compatible with RHEL7 or RHEL8")
+
+
+class KomodoenvUpdateNamespace(Namespace):
+    check: bool
 
 
 ENABLE_BASH = """\
@@ -310,7 +318,7 @@ def can_update(config: Dict[str, str]) -> bool:
     return current_maj == updated_maj
 
 
-def write_config(config: Dict[str, str]):
+def write_config(config: Dict[str, str]) -> None:
     with open(Path(__file__).parents[2] / "komodoenv.conf", "w", encoding="utf-8") as f:
         f.writelines(f"{key} = {val}\n" for key, val in config.items())
 
@@ -486,7 +494,7 @@ def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
             )
 
 
-def parse_args(args: List[str]):
+def parse_args(args: Optional[Sequence[str]]) -> KomodoenvUpdateNamespace:
     if args is None:
         args = sys.argv[1:]
 
@@ -498,11 +506,11 @@ def parse_args(args: List[str]):
         help="Check if this komodoenv can be updated",
     )
 
-    return ap.parse_args(args)
+    return ap.parse_args(args, namespace=KomodoenvUpdateNamespace())
 
 
-def main(args: Optional[List[str]] = None) -> None:
-    args = parse_args(args)
+def main(args: Optional[Sequence[str]] = None) -> None:
+    options = parse_args(args)
 
     config = read_config()
     if not check_same_distro(config):
@@ -514,14 +522,14 @@ def main(args: Optional[List[str]] = None) -> None:
     if not should_update(config, current):
         return
 
-    if args.check and not can_update(config):
+    if options.check and not can_update(config):
         print(
             "Warning: Your komodoenv is out of date. You will need to recreate komodo",
             file=sys.stderr,
         )
         sys.exit(0)
 
-    elif args.check:
+    elif options.check:
         print(
             dedent(
                 f"""\
