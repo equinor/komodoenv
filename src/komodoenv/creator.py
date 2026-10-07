@@ -12,6 +12,7 @@ import distro
 from komodoenv.bundle import get_bundled_wheel
 from komodoenv.colors import green, strip_color
 from komodoenv.python import Python
+from komodoenv.update import pth_content
 
 
 @contextmanager
@@ -135,13 +136,19 @@ class Creator:
             pth for pth in self.srcpy.site_paths if pth.startswith(str(self.srcpath))
         ]
 
+        finder = Path(__file__).parent / "editable_finder.py"
+        with self.create_file(
+            self.dstpy.site_packages_path / "_komodo_editable_finder.py",
+        ) as f:
+            f.write(finder.read_text(encoding="utf-8"))
+
         # We use zzz_komodo.pth to try and make it the last .pth file to be processed
         # alphabetically, and thus allowing for other editable installs to 'overwrite'
         # komodo packages.
         with self.create_file(
             self.dstpy.site_packages_path / "zzz_komodo.pth",
         ) as f:
-            f.write("\n".join(python_paths) + "\n")
+            f.write(pth_content(python_paths))
 
         # Create & run komodo-update
         with (
