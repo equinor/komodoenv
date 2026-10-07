@@ -466,6 +466,15 @@ def update_bins(srcpath: Path, dstpath: Path) -> None:
         shimpath.chmod(0o755)
 
 
+def pth_content(komodo_paths: Sequence[str]) -> str:
+    """Komodo's site-packages, followed by installing the finder which lets
+    editable installs take precedence over them (see editable_finder.py)"""
+    return "".join(path + "\n" for path in komodo_paths) + (
+        "import _komodo_editable_finder; "
+        f"_komodo_editable_finder.install({list(komodo_paths)!r})\n"
+    )
+
+
 def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
     path = (
         dstpath
@@ -479,19 +488,18 @@ def create_pth(config: Dict[str, str], srcpath: Path, dstpath: Path) -> None:
     # remove the old _komodo.pth.
     with contextlib.suppress(FileNotFoundError):
         (path / "_komodo.pth").unlink()
-    new_style_pth = path / "zzz_komodo.pth"
-    with open(new_style_pth, "w", encoding="utf-8") as f:
-        for lib in "lib64", "lib":  # noqa: FURB122
-            f.write(
-                str(
-                    srcpath
-                    / "root"
-                    / lib
-                    / ("python" + config["python-version"])
-                    / "site-packages",
-                )
-                + "\n",
-            )
+    komodo_paths = [
+        str(
+            srcpath
+            / "root"
+            / lib
+            / ("python" + config["python-version"])
+            / "site-packages"
+        )
+        for lib in ("lib64", "lib")
+    ]
+    with open(path / "zzz_komodo.pth", "w", encoding="utf-8") as f:
+        f.write(pth_content(komodo_paths))
 
 
 def parse_args(args: Optional[Sequence[str]]) -> KomodoenvUpdateNamespace:

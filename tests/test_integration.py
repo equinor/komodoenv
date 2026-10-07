@@ -1,5 +1,6 @@
 import sys
-from subprocess import PIPE, STDOUT, Popen, check_output
+from subprocess import PIPE, STDOUT, Popen, check_call, check_output
+from textwrap import dedent
 
 from komodoenv.__main__ import main as _main
 
@@ -127,6 +128,45 @@ def test_autodetect(komodo_root, tmp_path):
     [[ $(which python) == "{tmp_path}/kenv/root/bin/python"  ]]
     """
     assert bash(script) == 0
+
+
+def test_editable_install_takes_precedence_over_komodo(komodo_root, tmp_path):
+    main(
+        "--root",
+        str(komodo_root),
+        "--release",
+        "2030.01.00-py312",
+        str(tmp_path / "kenv"),
+    )
+
+    # A custom package-dir makes setuptools implement the editable install
+    # with an import finder instead of a path in a .pth file
+    project = tmp_path / "numpy"
+    (project / "src/numpy").mkdir(parents=True)
+    (project / "src/numpy/__init__.py").write_text('__version__ = "editable"\n')
+    (project / "pyproject.toml").write_text(
+        dedent(
+            """\
+            [build-system]
+            requires = ["setuptools>=64"]
+            build-backend = "setuptools.build_meta"
+
+            [project]
+            name = "numpy"
+            version = "2030.1"
+
+            [tool.setuptools]
+            packages = ["numpy"]
+            package-dir = {numpy = "src/numpy"}
+            """
+        )
+    )
+
+    python = str(tmp_path / "kenv/root/bin/python")
+    check_call([python, "-m", "pip", "install", "-e", str(project)])
+
+    version = check_output([python, "-c", "import numpy;print(numpy.__version__)"])
+    assert version.decode().strip() == "editable"
 
 
 def main(*args):
