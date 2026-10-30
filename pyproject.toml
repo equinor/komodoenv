@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=65", "setuptools_scm", "pip>=24"]
+requires = ["setuptools>=77", "setuptools_scm", "pip>=24"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,7 +10,8 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dynamic = ["version"]
-license = { text = "GPL-3.0" }
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 dependencies = [
   "distro",
   "PyYAML"
